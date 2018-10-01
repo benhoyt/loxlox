@@ -1,0 +1,723 @@
+// Lox interpreter written in ... Lox!
+
+
+// Scanner: converts Lox source code input into tokens
+
+// One-character tokens (values are the ASCII codes)
+var LEFT_PAREN = 40;
+var RIGHT_PAREN = 41;
+var LEFT_BRACE = 123;
+var RIGHT_BRACE = 125;
+var COMMA = 44;
+var DOT = 46;
+var MINUS = 45;
+var PLUS = 43;
+var SEMICOLON = 59;
+var SLASH = 47;
+var STAR = 42;
+var BANG = 33;
+var EQUAL = 61;
+var GREATER = 62;
+var LESS = 60;
+
+// Two-character tokens
+var BANG_EQUAL = 256;
+var EQUAL_EQUAL = 257;
+var GREATER_EQUAL = 258;
+var LESS_EQUAL = 259;
+
+// Literals
+var IDENTIFIER = 260;
+var STRING = 261;
+var NUMBER = 262;
+
+// Keywords
+var AND = 263;
+var CLASS = 264;
+var ELSE = 265;
+var FALSE = 266;
+var FUN = 267;
+var FOR = 268;
+var IF = 269;
+var NIL = 270;
+var OR = 271;
+var PRINT = 272;
+var RETURN = 273;
+var SUPER = 274;
+var THIS = 275;
+var TRUE = 276;
+var VAR = 277;
+var WHILE = 278;
+
+// Misc tokens
+var EOF = 279;
+var INVALID = 280;
+
+class Token {
+  init(type, value, line) {
+    this.type = type;
+    this.value = value;
+    this.line = line;
+  }
+}
+
+fun tokenTypeStr(type) {
+  if (type == LEFT_PAREN) return "(";
+  if (type == RIGHT_PAREN) return ")";
+  if (type == LEFT_BRACE) return "{";
+  if (type == RIGHT_BRACE) return "}";
+  if (type == COMMA) return ",";
+  if (type == DOT) return ".";
+  if (type == MINUS) return "-";
+  if (type == PLUS) return "+";
+  if (type == SEMICOLON) return ";";
+  if (type == SLASH) return "/";
+  if (type == STAR) return "*";
+  if (type == BANG) return "!";
+  if (type == EQUAL) return "=";
+  if (type == GREATER) return ">";
+  if (type == LESS) return "<";
+
+  if (type == BANG_EQUAL) return "!=";
+  if (type == EQUAL_EQUAL) return "==";
+  if (type == GREATER_EQUAL) return ">=";
+  if (type == LESS_EQUAL) return "<=";
+
+  if (type == IDENTIFIER) return "<identifier>";
+  if (type == STRING) return "<string>";
+  if (type == NUMBER) return "<number>";
+
+  if (type == AND) return "and";
+  if (type == CLASS) return "class";
+  if (type == ELSE) return "else";
+  if (type == FALSE) return "false";
+  if (type == FUN) return "fun";
+  if (type == FOR) return "for";
+  if (type == IF) return "if";
+  if (type == NIL) return "nil";
+  if (type == OR) return "or";
+  if (type == PRINT) return "print";
+  if (type == RETURN) return "return";
+  if (type == SUPER) return "super";
+  if (type == THIS) return "this";
+  if (type == TRUE) return "true";
+  if (type == VAR) return "var";
+  if (type == WHILE) return "while";
+
+  if (type == EOF) return "<eof>";
+  if (type == INVALID) return "<invalid>";
+
+  return nil;
+}
+
+fun keywordType(name) {
+  if (name == "and") return AND;
+  if (name == "class") return CLASS;
+  if (name == "else") return ELSE;
+  if (name == "false") return FALSE;
+  if (name == "fun") return FUN;
+  if (name == "for") return FOR;
+  if (name == "if") return IF;
+  if (name == "nil") return NIL;
+  if (name == "or") return OR;
+  if (name == "print") return PRINT;
+  if (name == "return") return RETURN;
+  if (name == "super") return SUPER;
+  if (name == "this") return THIS;
+  if (name == "true") return TRUE;
+  if (name == "var") return VAR;
+  if (name == "while") return WHILE;
+  return nil;
+}
+
+fun isNameStart(ch) {
+  // '_' or 'a'<=ch<='z' or 'A'<=ch<='Z'
+  return ch == 95 or (ch >= 97 and ch <= 122) or (ch >= 65 and ch <= 90);
+}
+
+fun isDigit(ch) {
+  // '0'<=ch<='9'
+  return ch >= 48 and ch <= 57;
+}
+
+class Scanner {
+  init() {
+    this.line = 1;
+    this.ch = getc();
+  }
+
+  next() {
+    while (this.ch != nil) {
+      var ch = this.ch;
+      this.ch = getc();
+      if (ch == LEFT_PAREN) return Token(LEFT_PAREN, nil, this.line);
+      else if (ch == RIGHT_PAREN) return Token(RIGHT_PAREN, nil, this.line);
+      else if (ch == LEFT_BRACE) return Token(LEFT_BRACE, nil, this.line);
+      else if (ch == RIGHT_BRACE) return Token(RIGHT_BRACE, nil, this.line);
+      else if (ch == COMMA) return Token(COMMA, nil, this.line);
+      else if (ch == DOT) return Token(DOT, nil, this.line);
+      else if (ch == MINUS) return Token(MINUS, nil, this.line);
+      else if (ch == PLUS) return Token(PLUS, nil, this.line);
+      else if (ch == SEMICOLON) return Token(SEMICOLON, nil, this.line);
+      else if (ch == STAR) return Token(STAR, nil, this.line);
+      else if (ch == BANG) {
+        if (this.ch == EQUAL) {
+          this.ch = getc();
+          return Token(BANG_EQUAL, nil, this.line);
+        }
+        return Token(BANG, nil, this.line);
+      }
+      else if (ch == EQUAL) {
+        if (this.ch == EQUAL) {
+          this.ch = getc();
+          return Token(EQUAL_EQUAL, nil, this.line);
+        }
+        return Token(EQUAL, nil, this.line);
+      }
+      else if (ch == LESS) {
+        if (this.ch == EQUAL) {
+          this.ch = getc();
+          return Token(LESS_EQUAL, nil, this.line);
+        }
+        return Token(LESS, nil, this.line);
+      }
+      else if (ch == GREATER) {
+        if (this.ch == EQUAL) {
+          this.ch = getc();
+          return Token(GREATER_EQUAL, nil, this.line);
+        }
+        return Token(GREATER, nil, this.line);
+      }
+      else if (ch == SLASH) {
+        if (this.ch != SLASH) return Token(SLASH, nil, this.line);
+        // Comment till end of line
+        this.ch = getc();
+        while (this.ch != nil and this.ch != 10) {
+          this.ch = getc();
+        }
+        this.ch = getc();
+      }
+      else if (ch == 32 or ch == 9 or ch == 13) {
+        // Ignore whitespace: space, tab, and carriage return
+      }
+      else if (ch == 10) {
+        // Newline
+        this.line = this.line + 1;  
+      }
+      else if (ch == 34) {
+        // Strings (start and end with double quote)
+        var line = this.line;
+        var value = "";
+        while (this.ch != nil and this.ch != 34) {
+          if (this.ch == 10) {
+            this.line = this.line + 1;
+          }
+          value = value + chr(this.ch);
+          this.ch = getc();
+        }
+        if (this.ch == nil) {
+          return Token(INVALID, "Unterminated string '" + value + "'", this.line);
+        }
+        this.ch = getc();
+        return Token(STRING, value, line);
+      }
+      else if (isDigit(ch)) {
+        // Numbers ('0' == 48)
+        var num = ch - 48;
+        while (isDigit(this.ch)) {
+          num = num*10 + this.ch - 48;
+          this.ch = getc();
+        }
+        // Fractional part
+        if (this.ch == DOT) {
+          this.ch = getc();
+          if (!isDigit(this.ch)) {
+            return Token(INVALID, "Expected digit after .", this.line);
+          }
+          var numerator = 0;
+          var denominator = 1;
+          while (isDigit(this.ch)) {
+            numerator = numerator*10 + this.ch - 48;
+            denominator = denominator*10;
+            this.ch = getc();
+          }
+          num = num + numerator/denominator;
+        }
+        return Token(NUMBER, num, this.line);
+      } else if (isNameStart(ch)) {
+        // Identifiers and keywords
+        var name = chr(ch);
+        while (isNameStart(this.ch) or isDigit(this.ch)) {
+          name = name + chr(this.ch);
+          this.ch = getc();
+        }
+        var keyword = keywordType(name);
+        if (keyword != nil) {
+          return Token(keyword, nil, this.line);
+        }
+        return Token(IDENTIFIER, name, this.line);
+      } else {
+        return Token(INVALID, "Unexpected character '" + chr(ch) + "'", this.line);
+      }
+    }
+    return Token(EOF, nil, this.line);
+  }
+}
+
+// Test scanner by reading input and displaying tokens
+fun testScanner() {
+  var scanner = Scanner();
+  var done = false;
+  while (!done) {
+    var token = scanner.next();
+    if (token.type == EOF) {
+      done = true;
+    } else if (token.type == INVALID) {
+      done = true;
+      print token.value + " on line:";
+      print token.line;
+    } else {
+      if (token.value != nil) {
+        print tokenTypeStr(token.type);
+        print token.value;
+      } else {
+        print tokenTypeStr(token.type);
+      }
+    }
+  }
+}
+
+// TODO: testScanner();
+
+
+// List: used in AST for lists of statements. We have to hand-craft
+// this as Lox doesn't have a built-in list or array type.
+
+class ListNode {
+  init(value) {
+    this.value = value;
+    this.next = nil;
+  }
+}
+
+class List {
+  init() {
+    this.head = nil;
+    this.tail = nil;
+  }
+
+  append(value) {
+    var node = ListNode(value);
+    if (this.head == nil) {
+      this.head = node;
+      this.tail = node;
+    } else {
+      this.tail.next = node;
+      this.tail = node;
+    }
+    return this;
+  }
+
+  foreach(f) {
+    var node = this.head;
+    while (node != nil) {
+      f(node.value);
+      node = node.next;
+    }
+  }
+}
+
+
+// Syntax tree nodes
+
+// Expressions
+
+class Assign {
+  init(name, value) {
+    this.name = name;
+    this.value = value;
+  }
+
+  str() {
+    return this.name + " = " + this.value.str();
+  }
+}
+
+class Binary {
+  init(left, operator, right) {
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+
+  str() {
+    return "(" + this.left.str() + " " + tokenTypeStr(this.operator) +
+           " " + this.right.str() + ")";
+  }
+
+  evaluate(interpreter) {
+    var left = this.left.evaluate(interpreter);
+    var right = this.right.evaluate(interpreter);
+    if (this.operator == PLUS) return left + right;
+    if (this.operator == MINUS) return left - right;
+    if (this.operator == STAR) return left * right;
+    if (this.operator == SLASH) return left / right;
+    if (this.operator == BANG_EQUAL) return left != right;
+    if (this.operator == EQUAL_EQUAL) return left == right;
+    if (this.operator == GREATER) return left > right;
+    if (this.operator == GREATER_EQUAL) return left >= right;
+    if (this.operator == LESS) return left < right;
+    if (this.operator == LESS_EQUAL) return left <= right;
+    return nil; // Unreachable
+  }
+}
+
+class Call {
+  init(callee, paren, arguments) {
+    this.callee = callee;
+    this.paren = paren;
+    this.arguments = arguments;
+  }
+
+  // TODO: str()
+}
+
+class Get {
+  init(object, name) {
+    this.object = object;
+    this.name = name;
+  }
+  
+  str() {
+    return this.object.str() + "." + this.name;
+  }
+}
+
+fun numberStr(num) {
+  // TODO: only handles integers right now
+  var s = "";
+  if (num < 0) {
+    s = "-";
+    num = -num;
+  }
+  var mult = 1;
+  while (mult*10 <= num) {
+    mult = mult * 10;
+  }
+  while (mult >= 1) {
+    var digit = 0;
+    while (mult*(digit+1) <= num) {
+      digit = digit + 1;
+    }
+    s = s + chr(digit + 48);
+    num = num - mult*digit;
+    mult = mult / 10;
+  }
+  return s;
+}
+
+class Literal {
+  init(type, value) {
+    this.type = type;
+    this.value = value;
+  }
+
+  str() {
+    if (this.type == "boolean") {
+      if (this.value) {
+        return "true";
+      } else {
+        return "false";
+      }
+    }
+    if (this.type == "nil") {
+      return "nil";
+    }
+    if (this.type == "number") {
+      return numberStr(this.value);
+    }
+    if (this.type == "string") {
+      return chr(34) + this.value + chr(34);
+    }
+    return "<unexpected type>";
+  }
+
+  evaluate(interpreter) {
+    return this.value;
+  }
+}
+
+class Logical {
+  init(left, operator, right) {
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+
+  str() {
+    return "(" + this.left.str() + " " + tokenTypeStr(this.operator) +
+           " " + this.right.str() + ")";
+  }
+
+  evaluate(interpreter) {
+    var left = this.left.evaluate(interpreter);
+    if (this.operator == AND) {
+      return left and this.right.evaluate(interpreter);
+    } else {
+      return left or this.right.evaluate(interpreter);
+    }
+  }
+}
+
+class Set {
+  init(object, name, value) {
+    this.object = object;
+    this.name = name;
+    this.value = value;
+  }
+
+  str() {
+    // TODO: is this correct?
+    return this.object.str() + "." + this.name + " = " + this.value.str();
+  }
+}
+
+class Super {
+  init(keyword, method) {
+    this.keyword = keyword;
+    this.method = method;
+  }
+
+  // TODO: str()
+}
+
+class This {
+  init(keyword) {
+    this.keyword = keyword;
+  }
+
+  // TOOD: str()
+}
+
+class Unary {
+  init(operator, right) {
+    this.operator = operator;
+    this.right = right;
+  }
+
+  str() {
+    return tokenTypeStr(this.operator) + this.right.str();
+  }
+
+  evaluate(interpreter) {
+    var right = this.right.evaluate(interpreter);
+    if (this.operator == BANG) return !right;
+    return -right;
+  }
+}
+
+class Variable {
+  init(name) {
+    this.name = name;
+  }
+
+  str() {
+    return interpreter.lookupVariable(this.name, this);
+  }
+}
+
+// Statements
+
+class Program {
+  init(statements) {
+    this.statements = statements;
+  }
+
+  str() {
+    var s = "";
+    fun format(statement) {
+      s = s + statement.str();
+    }
+    this.statements.foreach(format);
+    return s;
+  }
+
+  execute(interpreter) {
+    fun executeStatement(statement) {
+      statement.execute(interpreter);
+    }
+    this.statements.foreach(executeStatement);
+  }
+}
+
+var indent = 0;
+
+class Block {
+  init(statements) {
+    this.statements = statements;
+  }
+
+  str() {
+    var s = "{" + chr(10);
+    indent = indent + 2;
+    fun format(statement) {
+      for (var i = 0; i < indent; i = i + 1) {
+        s = s + " ";
+      }
+      s = s + statement.str();
+    }
+    this.statements.foreach(format);
+    indent = indent - 2;
+    for (var i = 0; i < indent; i = i + 1) {
+      s = s + " ";
+    }
+    s = s + "}" + chr(10);
+    return s;
+  }
+
+  execute(interpreter) {
+    fun executeStatement(statement) {
+      statement.execute(interpreter);
+    }
+    this.statements.foreach(executeStatement);
+  }
+}
+
+// TODO: Class
+
+class Expression {
+  init(expression) {
+    this.expression = expression;
+  }
+
+  str() {
+    return this.expression.str() + ";" + chr(10);
+  }
+
+  execute(interpreter) {
+    this.expression.evaluate(interpreter);
+  }
+}
+
+// TODO: Function
+
+class If {
+  init(condition, thenBranch, elseBranch) {
+    this.condition = condition;
+    this.thenBranch = thenBranch;
+    this.elseBranch = elseBranch;
+  }
+
+  str() {
+    var s = "if (" + this.condition.str() + ") " + this.thenBranch.str();
+    if (this.elseBranch != nil) {
+      s = s + "else " + this.elseBranch.str();
+    }
+    return s;
+  }
+
+  execute(interpreter) {
+    if (this.condition.evaluate(interpreter)) {
+      this.thenBranch.execute(interpreter);
+    } else if (this.elseBranch != nil) {
+      this.elseBranch.execute(interpreter);
+    }
+  }
+}
+
+class Print {
+  init(expression) {
+    this.expression = expression;
+  }
+
+  str() {
+    return "print " + this.expression.str() + ";" + chr(10);
+  }
+
+  execute(interpreter) {
+    print this.expression.evaluate(interpreter);
+  }
+}
+
+// TODO: Return
+
+class Var {
+  init(name, initializer) {
+    this.name = name;
+    this.initializer = initializer;
+  }
+
+  str() {
+    var s = "var " + this.name;
+    if (this.initializer != nil) {
+      s = s + " = " + this.initializer.str();
+    }
+    s = s + ";" + chr(10);
+    return s;
+  }
+
+  execute(interpreter) {
+    var value;
+    if (this.initializer != nil) {
+      value = this.initializer.evaluate(interpreter);
+    }
+    interpreter.environment.define(this.name, value);
+  }
+}
+
+class While {
+  init(condition, body) {
+    this.condition = condition;
+    this.body = body;
+  }
+
+  str() {
+    return "while (" + this.condition.str() + ") " + this.body.str();
+  }
+
+  execute(interpreter) {
+    while (this.condition.evaluate(interpreter)) {
+      this.body.execute(interpreter);
+    }
+  }
+}
+
+var statements = List();
+// statements.append(Print(Binary(
+//   Literal("number", 12),
+//   PLUS,
+//   Literal("number", 34)
+// )));
+statements.append(If(
+  Literal("boolean", true),
+  Block(List().append(
+    Print(Literal("string", "TRUE"))
+  ).append(
+    Print(Literal("number", 42))
+  ).append(If(
+    Literal("boolean", false),
+    Block(List().append(
+      Print(Literal("string", "INNER"))
+    )),
+    nil
+  ))),
+  nil
+));
+var program = Program(statements);
+print program.str();
+
+
+// The interpreter
+
+class Interpreter {
+  init(program) {
+    this.program = program;
+  }
+
+  interpret() {
+    this.program.execute(this);
+  }
+}
+
+var interpreter = Interpreter(program);
+interpreter.interpret();
