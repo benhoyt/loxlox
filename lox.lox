@@ -328,12 +328,92 @@ class List {
 }
 
 
+// Environment: used in interpreter to store and resolve variables.
+
+class EnvironmentItem {
+  init(name, value) {
+    this.name = name;
+    this.value = value;
+  }
+}
+
+class Environment {
+  init(enclosing) {
+    this.enclosing = enclosing;
+    this.items = List();
+  }
+
+  find(name) {
+    var found;
+    fun findItem(item) {
+      if (item.name == name) {
+        found = item;
+      }
+    }
+    this.items.foreach(findItem);
+    return found;
+  }
+
+  get(name) {
+    var item = this.find(name);
+    if (item != nil) {
+      return item.value;
+    }
+    if (this.enclosing != nil) {
+      return this.enclosing.get(name);
+    }
+    print "loxlox: Undefined variable '" + name + "'.";
+    RUNTIME_ERROR;
+  }
+
+  assign(name, value) {
+    var item = this.find(name);
+    if (item != nil) {
+      item.value = value;
+      return;
+    }
+    if (this.enclosing != nil) {
+      this.enclosing.assign(name, value);
+      return;
+    }
+    print "loxlox: Undefined variable '" + name + "'.";
+    RUNTIME_ERROR;
+  }
+
+  define(name, value) {
+    var item = this.find(name);
+    if (item == nil) {
+      this.items.append(EnvironmentItem(name, value));
+    } else {
+      item.value = value;
+    }
+  }
+
+  ancestor(distance) {
+    var environment = this;
+    for (var i = 0; i < distance; i = i + 1) {
+      environment = environment.enclosing;
+    }
+    return environment;
+  }
+
+  getAt(distance, name) {
+    return this.ancestor(distance).find(name).value;
+  }
+
+  assignAt(distance, name, value) {
+    this.ancestor(distance).find(name).value = value;
+  }
+}
+
+
 // Syntax tree nodes
 
 // Expressions
 
 class Assign {
   init(name, value) {
+    this.type = "Assign";
     this.name = name;
     this.value = value;
   }
@@ -341,10 +421,22 @@ class Assign {
   str() {
     return this.name + " = " + this.value.str();
   }
+
+  evaluate(interpreter) {
+    var value = this.value.evaluate(interpreter);
+    var distance = interpreter.locals.get(this);
+    if (distance != nil) {
+      interpreter.environment.assignAt(distance, this.name, value);
+    } else {
+      interpreter.globals.assign(this.name, value);
+    }
+    return value;
+  }
 }
 
 class Binary {
   init(left, operator, right) {
+    this.type = "Binary";
     this.left = left;
     this.operator = operator;
     this.right = right;
@@ -373,17 +465,46 @@ class Binary {
 }
 
 class Call {
-  init(callee, paren, arguments) {
+  init(callee, arguments) {
+    this.type = "Call";
     this.callee = callee;
-    this.paren = paren;
     this.arguments = arguments;
   }
 
-  // TODO: str()
+  str() {
+    var s = this.callee.str() + "(";
+    var addComma = false;
+    fun addArgument(argument) {
+      if (addComma) {
+        s = s + ", ";
+      }
+      addComma = true;
+      s = s + argument.str();
+    }
+    this.arguments.foreach(addArgument);
+    s = s + ")";
+    return s;
+  }
+
+  evaluate(interpreter) {
+    var callee = this.callee.evaluate(interpreter);
+    var arguments = List();
+    fun addArgument(argument) {
+      arguments.append(argument.evaluate(interpreter));
+    }
+    this.arguments.foreach(addArgument);
+    if (arguments.length() != this.callee.arity()) {
+      print "loxlox: Expected " + numberStr(this.callee.arity()) +
+        " arguments but got " + numberStr(arguments.length()) + ".";
+      RUNTIME_ERROR;
+    }
+    return this.callee.call(interpreter, arguments);
+  }
 }
 
 class Get {
   init(object, name) {
+    this.type = "Get";
     this.object = object;
     this.name = name;
   }
@@ -417,29 +538,30 @@ fun numberStr(num) {
 }
 
 class Literal {
-  init(type, value) {
-    this.type = type;
+  init(kind, value) {
+    this.type = "Literal";
+    this.kind = kind;
     this.value = value;
   }
 
   str() {
-    if (this.type == "boolean") {
+    if (this.kind == "boolean") {
       if (this.value) {
         return "true";
       } else {
         return "false";
       }
     }
-    if (this.type == "nil") {
+    if (this.kind == "nil") {
       return "nil";
     }
-    if (this.type == "number") {
+    if (this.kind == "number") {
       return numberStr(this.value);
     }
-    if (this.type == "string") {
+    if (this.kind == "string") {
       return chr(34) + this.value + chr(34);
     }
-    return "<unexpected type>";
+    return "<unexpected kind>";
   }
 
   evaluate(interpreter) {
@@ -449,6 +571,7 @@ class Literal {
 
 class Logical {
   init(left, operator, right) {
+    this.type = "Logical";
     this.left = left;
     this.operator = operator;
     this.right = right;
@@ -471,6 +594,7 @@ class Logical {
 
 class Set {
   init(object, name, value) {
+    this.type = "Set";
     this.object = object;
     this.name = name;
     this.value = value;
@@ -483,24 +607,37 @@ class Set {
 }
 
 class Super {
-  init(keyword, method) {
-    this.keyword = keyword;
+  init(method) {
+    this.type = "Super";
     this.method = method;
   }
 
-  // TODO: str()
+  str() {
+    return "super." + this.method;
+  }
+
+  evaluate() {
+    TODO;
+  }
 }
 
 class This {
-  init(keyword) {
-    this.keyword = keyword;
+  init() {
+    this.type = "This";
   }
 
-  // TOOD: str()
+  str() {
+    return "this";
+  }
+
+  evaluate() {
+    TODO;
+  }
 }
 
 class Unary {
   init(operator, right) {
+    this.type = "Unary";
     this.operator = operator;
     this.right = right;
   }
@@ -518,10 +655,15 @@ class Unary {
 
 class Variable {
   init(name) {
+    this.type = "Variable";
     this.name = name;
   }
 
   str() {
+    return this.name;
+  }
+
+  evaluate() {
     return interpreter.lookupVariable(this.name, this);
   }
 }
@@ -530,6 +672,7 @@ class Variable {
 
 class Program {
   init(statements) {
+    this.type = "Program";
     this.statements = statements;
   }
 
@@ -554,39 +697,58 @@ var indent = 0;
 
 class Block {
   init(statements) {
+    this.type = "Block";
     this.statements = statements;
   }
 
   str() {
     var s = "{" + chr(10);
-    indent = indent + 2;
+    indent = indent + 1;
     fun format(statement) {
       for (var i = 0; i < indent; i = i + 1) {
-        s = s + " ";
+        s = s + "  ";
       }
       s = s + statement.str();
     }
     this.statements.foreach(format);
-    indent = indent - 2;
+    indent = indent - 1;
     for (var i = 0; i < indent; i = i + 1) {
-      s = s + " ";
+      s = s + "  ";
     }
     s = s + "}" + chr(10);
     return s;
   }
 
   execute(interpreter) {
-    fun executeStatement(statement) {
-      statement.execute(interpreter);
-    }
-    this.statements.foreach(executeStatement);
+    interpreter.executeBlock(this.statements, Environment(nil));
   }
 }
 
-// TODO: Class
+class Class {
+  init(name, superclass, methods) {
+    this.type = "Class";
+    this.name = name;
+    this.superclass = superclass;
+    this.methods = methods;
+  }
+
+  str() {
+    var s = "class " + this.name + " ";
+    if (this.superclass != nil) {
+      s = s + "< " + this.superclass.name + " ";
+    }
+    s = s + Block(this.methods).str(); // Reuse Block.str()
+    return s;
+  }
+
+  execute(interpreter) {
+    TODO;
+  }
+}
 
 class Expression {
   init(expression) {
+    this.type = "Expression";
     this.expression = expression;
   }
 
@@ -599,10 +761,39 @@ class Expression {
   }
 }
 
-// TODO: Function
+class Function {
+  init(name, params, body) {
+    this.type = "Function";
+    this.name = name;
+    this.params = params;
+    this.body = body;
+  }
+
+  str() {
+    var s = "fun " + this.name + "(";
+    var addComma = false;
+    fun addParam(param) {
+      if (addComma) {
+        s = s + ", ";
+      }
+      addComma = true;
+      s = s + param;
+    }
+    this.params.foreach(addParam);
+    s = s + ") ";
+    s = s + Block(this.body).str();
+    return s;
+  }
+
+  execute(interpreter) {
+    var function = LoxFunction(this, interpreter.environment, false);
+    interpreter.environment.define(this.name, function);
+  }
+}
 
 class If {
   init(condition, thenBranch, elseBranch) {
+    this.type = "If";
     this.condition = condition;
     this.thenBranch = thenBranch;
     this.elseBranch = elseBranch;
@@ -627,6 +818,7 @@ class If {
 
 class Print {
   init(expression) {
+    this.type = "Print";
     this.expression = expression;
   }
 
@@ -639,10 +831,34 @@ class Print {
   }
 }
 
-// TODO: Return
+class ReturnValue {
+  init(value) {
+    this.value = value;
+  }
+}
+
+class Return {
+  init(value) {
+    this.type = "Return";
+    this.value = value;
+  }
+
+  str() {
+    return "return " + this.value.str() + ";" + chr(10);
+  }
+
+  execute(interpreter) {
+    var value;
+    if (this.value != nil) {
+      value = value.evaluate(interpreter);
+    }
+    return ReturnValue(value);
+  }
+}
 
 class Var {
   init(name, initializer) {
+    this.type = "Var";
     this.name = name;
     this.initializer = initializer;
   }
@@ -667,6 +883,7 @@ class Var {
 
 class While {
   init(condition, body) {
+    this.type = "While";
     this.condition = condition;
     this.body = body;
   }
@@ -682,29 +899,392 @@ class While {
   }
 }
 
-var statements = List();
-// statements.append(Print(Binary(
-//   Literal("number", 12),
-//   PLUS,
-//   Literal("number", 34)
-// )));
-statements.append(If(
-  Literal("boolean", true),
-  Block(List().append(
-    Print(Literal("string", "TRUE"))
-  ).append(
-    Print(Literal("number", 42))
-  ).append(If(
-    Literal("boolean", false),
-    Block(List().append(
-      Print(Literal("string", "INNER"))
-    )),
-    nil
-  ))),
-  nil
-));
-var program = Program(statements);
-print program.str();
+// The parser
+
+class Parser {
+  init() {
+    this.scanner = Scanner();
+    this.next();
+  }
+
+  next() {
+    this.token = this.scanner.next();
+    if (this.token.type == INVALID) {
+      this.error(this.value);
+    }
+  }
+
+  error(message) {
+    print "loxlox: [line " + numberStr(this.token.line) + "] " + message;
+    SYNTAX_ERROR;
+  }
+
+  match(type) {
+    if (this.token.type == type) {
+      var previous = this.token;
+      this.next();
+      return previous;
+    }
+    return nil;
+  }
+
+  consume(type, message) {
+    var token = this.token;
+    if (this.match(type)) {
+      return token;
+    }
+    this.error(message);
+  }
+
+  parse() {
+    var statements = List();
+    while (this.token.type != EOF) {
+      statements.append(this.declaration());
+    }
+    return Program(statements);
+  }
+
+  expression() {
+    return this.assignment();
+  }
+
+  declaration() {
+    if (this.match(CLASS)) return this.classDeclaration();
+    if (this.match(FUN)) return this.function("function");
+    if (this.match(VAR)) return this.varDeclaration();
+    return this.statement();
+  }
+
+  classDeclaration() {
+    var name = this.consume(IDENTIFIER, "Expect class name.");
+    var superclass;
+    if (this.match(LESS)) {
+      var superName = this.consume(IDENTIFIER, "Expect superclass name.");
+      superclass = Variable(superName.value);
+    }
+
+    this.consume(LEFT_BRACE, "Expect '{' before class body.");
+    var methods = List();
+    while (this.token.type != EOF and this.token.type != RIGHT_BRACE) {
+      methods.append(this.function("method"));
+    }
+    this.consume(RIGHT_BRACE, "Expect '}' after class body.");
+
+    return Class(name.value, superclass, methods);
+  }
+
+  statement() {
+    if (this.match(FOR)) return this.forStatement();
+    if (this.match(IF)) return this.ifStatement();
+    if (this.match(PRINT)) return this.printStatement();
+    if (this.match(RETURN)) return this.returnStatement();
+    if (this.match(WHILE)) return this.whileStatement();
+    if (this.match(LEFT_BRACE)) return Block(this.block());
+    return this.expressionStatement();
+  }
+
+  forStatement() {
+    this.consume(LEFT_PAREN, "Expect '(' after 'for'.");
+
+    var initializer;
+    if (this.match(SEMICOLON)) {
+      // No initializer
+    } else if (this.match(VAR)) {
+      initializer = this.varDeclaration();
+    } else {
+      initializer = this.expressionStatement();
+    }
+
+    var condition;
+    if (this.token.type != SEMICOLON) {
+      condition = this.expression();
+    }
+    this.consume(SEMICOLON, "Expect ';' after loop condition.");
+
+    var increment;
+    if (this.token.type != RIGHT_PAREN) {
+      increment = Expression(this.expression());
+    }
+    this.consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    var body = this.statement();
+
+    // Desugar increment
+    if (increment != nil) {
+      var statements = List();
+      statements.append(body);
+      statements.append(increment);
+      body = Block(statements);
+    }
+
+    // Desugar condition
+    if (condition == nil) {
+      condition = Literal("boolean", true);
+    }
+    body = While(condition, body);
+
+    // Desugar initializer
+    if (initializer != nil) {
+      var statements = List();
+      statements.append(initializer);
+      statements.append(body);
+      body = Block(statements);
+    }
+
+    return body;
+  }
+
+  ifStatement() {
+    this.consume(LEFT_PAREN, "Expect '(' after 'if'.");
+    var condition = this.expression();
+    this.consume(RIGHT_PAREN, "Expect ')' after if condition.");
+    var thenBranch = this.statement();
+    var elseBranch;
+    if (this.match(ELSE)) {
+      elseBranch = this.statement();
+    }
+    return If(condition, thenBranch, elseBranch);
+  }
+
+  printStatement() {
+    var value = this.expression();
+    this.consume(SEMICOLON, "Expect ';' after value.");
+    return Print(value);
+  }
+
+  returnStatement() {
+    var value;
+    if (this.token.type != SEMICOLON) {
+      value = this.expression();
+    }
+    this.consume(SEMICOLON, "Expect ';' after return value.");
+    return Return(value);
+  }
+
+  varDeclaration() {
+    var name = this.consume(IDENTIFIER, "Expect variable name.");
+    var initializer;
+    if (this.match(EQUAL)) {
+      initializer = this.expression();
+    }
+    this.consume(SEMICOLON, "Expect ';' after variable declaration.");
+    return Var(name.value, initializer);
+  }
+
+  whileStatement() {
+    this.consume(LEFT_PAREN, "Expect '(' after 'while'.");
+    var condition = this.expression();
+    this.consume(RIGHT_PAREN, "Expect ')' after condition.");
+    var body = this.statement();
+    return While(condition, body);
+  }
+
+  expressionStatement() {
+    var expr = this.expression();
+    this.consume(SEMICOLON, "Expect ';' after expression.");
+    return Expression(expr);
+  }
+
+  function(kind) {
+    var name = this.consume(IDENTIFIER, "Expect " + kind + " name.");
+    this.consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+    var parameters = List();
+    var n = 0;
+    while (this.token.type != RIGHT_PAREN) {
+      if (n >= 8) {
+        this.error("Cannot have more than 8 parameters.");
+      }
+      if (n > 0) {
+        this.consume(COMMA, "Expect ',' after parameter.");
+      }
+      var paramName = this.consume(IDENTIFIER, "Expect parameter name.");
+      parameters.append(paramName.value);
+      n = n + 1;
+    }
+    this.consume(RIGHT_PAREN, "Expect ')' after parameters.");
+    this.consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+    var body = this.block();
+    return Function(name.value, parameters, body);
+  }
+
+  block() {
+    var statements = List();
+    while (this.token.type != EOF and this.token.type != RIGHT_BRACE) {
+      statements.append(this.declaration());
+    }
+    this.consume(RIGHT_BRACE, "Expect '}' after block.");
+    return statements;
+  }
+
+  assignment() {
+    var expr = this.or_();
+    if (this.match(EQUAL)) {
+      var value = this.assignment();
+      if (expr.type == "Variable") {
+        return Assign(expr.name, value);
+      }
+      if (expr.type == "Get") {
+        return Set(expr.object, expr.name, value);
+      }
+      this.error("Invalid assignment target: " + expr.str());
+    }
+    return expr;
+  }
+
+  or_() {
+    var expr = this.and_();
+    while (this.match(OR)) {
+      var right = this.and_();
+      expr = Logical(expr, OR, right);
+    }
+    return expr;
+  }
+
+  and_() {
+    var expr = this.equality();
+    while (this.match(AND)) {
+      var right = this.equality();
+      expr = Logical(expr, AND, right);
+    }
+    return expr;
+  }
+
+  equality() {
+    var expr = this.comparison();
+    while (this.token.type == BANG_EQUAL or this.token.type == EQUAL_EQUAL) {
+      var operator = this.token.type;
+      this.next();
+      var right = this.comparison();
+      expr = Binary(expr, operator, right);
+    }
+    return expr;
+  }
+
+  comparison() {
+    var expr = this.addition();
+    while (this.token.type == GREATER or this.token.type == GREATER_EQUAL or
+           this.token.type == LESS or this.token.type == LESS_EQUAL) {
+      var operator = this.token.type;
+      this.next();
+      var right = this.addition();
+      expr = Binary(expr, operator, right);
+    }
+    return expr;
+  }
+
+  addition() {
+    var expr = this.multiplication();
+    while (this.token.type == MINUS or this.token.type == PLUS) {
+      var operator = this.token.type;
+      this.next();
+      var right = this.multiplication();
+      expr = Binary(expr, operator, right);
+    }
+    return expr;
+  }
+
+  multiplication() {
+    var expr = this.unary();
+    while (this.token.type == SLASH or this.token.type == STAR) {
+      var operator = this.token.type;
+      this.next();
+      var right = this.unary();
+      expr = Binary(expr, operator, right);
+    }
+    return expr;
+  }
+
+  unary() {
+    if (this.token.type == BANG or this.token.type == MINUS) {
+      var operator = this.token.type;
+      this.next();
+      var right = this.unary();
+      return Unary(operator, right);
+    }
+    return this.call();
+  }
+
+  call() {
+    var expr = this.primary();
+    var loop = true;
+    while (loop) {
+      if (this.match(LEFT_PAREN)) {
+        var arguments = List();
+        var n = 0;
+        while (this.token.type != RIGHT_PAREN) {
+          if (n >= 8) {
+            this.error("Cannot have more than 8 arguments.");
+          }
+          if (n > 0) {
+            this.consume(COMMA, "Expect ',' after argument.");
+          }
+          arguments.append(this.expression());
+          n = n + 1;
+        }
+        this.consume(RIGHT_PAREN, "Expect ')' after arguments.");
+        return Call(expr, arguments);
+      } else if (this.match(DOT)) {
+        var name = this.consume(IDENTIFIER, "Expect property name after '.'.");
+        expr = Get(expr, name.value);
+      } else {
+        loop = false;
+      }
+    }
+    return expr;
+  }
+
+  primary() {
+    if (this.match(FALSE)) return Literal("boolean", false);
+    if (this.match(TRUE)) return Literal("boolean", true);
+    if (this.match(NIL)) return Literal("nil", nil);
+    var number = this.match(NUMBER);
+    if (number) {
+      return Literal("number", number.value);
+    }
+    var string = this.match(STRING);
+    if (string) {
+      return Literal("string", string.value);
+    }
+    if (this.match(SUPER)) {
+      this.consume(DOT, "Expect '.' after 'super'.");
+      var method = this.consume(IDENTIFIER, "Expect superclass method name.");
+      return Super(method.value);
+    }
+    if (this.match(THIS)) {
+      return This();
+    }
+    var identifier = this.match(IDENTIFIER);
+    if (identifier) {
+      return Variable(identifier.value);
+    }
+    if (this.match(LEFT_PAREN)) {
+      var expr = this.expression();
+      this.consume(RIGHT_PAREN, "Expect ')' after expression.");
+      return expr;
+    }
+    this.error("Expect expression.");
+  }
+}
+
+
+// var statements = List();
+// statements.append(If(
+//   Literal("boolean", true),
+//   Block(List().append(
+//     Print(Literal("string", "TRUE"))
+//   ).append(
+//     Print(Literal("number", 42))
+//   ).append(If(
+//     Literal("boolean", false),
+//     Block(List().append(
+//       Print(Literal("string", "INNER"))
+//     )),
+//     nil
+//   ))),
+//   nil
+// ));
+// var program = Program(statements);
+// print program.str();
 
 
 // The interpreter
@@ -712,12 +1292,42 @@ print program.str();
 class Interpreter {
   init(program) {
     this.program = program;
+    this.globals = Environment(nil);
+    this.environment = this.globals;
+
+    // Define built-in functions
+    this.globals.define("clock", clock);
+    this.globals.define("getc", getc);
+    this.globals.define("chr", chr);
   }
 
   interpret() {
     this.program.execute(this);
   }
+
+  executeBlock(statements, environment) {
+    var previous = this.environment;
+    this.environment = environment;
+    fun executeStatement(statement) {
+      statement.execute(this);
+    }
+    statements.foreach(executeStatement);
+    this.environment = previous;
+  }
+
+  lookupVariable(name, expr) {
+    var distance = this.locals.get(expr);
+    if (distance != nil) {
+      return this.environment.getAt(distance, name);
+    } else {
+      return this.globals.get(name);
+    }
+  }
 }
 
-var interpreter = Interpreter(program);
-interpreter.interpret();
+var parser = Parser();
+var program = parser.parse();
+print program.str();
+
+// var interpreter = Interpreter(program);
+// interpreter.interpret();
