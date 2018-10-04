@@ -1433,8 +1433,10 @@ class Interpreter {
 
 var parser = Parser();
 var program = parser.parse();
-print program.str();
-print "-----";
+
+// DEBUG: uncomment these two lines to pretty-print the parsed syntax tree
+// print program.str();
+// print "-----";
 
 var interpreter = Interpreter(program);
 interpreter.interpret();
