@@ -1,5 +1,8 @@
 // Lox interpreter written in ... Lox!
 
+// TODO: run tests from craftingintepreter
+// - there are tests for Grouping (which we don't do)
+
 
 // Scanner: converts Lox source code input into tokens
 
@@ -794,7 +797,7 @@ class Block {
   }
 
   execute(interpreter) {
-    return interpreter.executeBlock(this.statements, Environment(nil));
+    return interpreter.executeBlock(this.statements, Environment(interpreter.environment));
   }
 }
 
