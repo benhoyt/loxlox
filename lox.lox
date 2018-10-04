@@ -519,10 +519,13 @@ class LoxFunction {
       i = i + 1;
     }
     this.declaration.params.foreach(defineArg);
-    // TODO: handle return values
-    interpreter.executeBlock(this.declaration.body, environment);
+
+    var ret = interpreter.executeBlock(this.declaration.body, environment);
     if (this.isInitializer) {
       return this.closure.get("this");
+    }
+    if (ret) {
+      return ret.value;
     }
     return nil;
   }
@@ -791,7 +794,7 @@ class Block {
   }
 
   execute(interpreter) {
-    interpreter.executeBlock(this.statements, Environment(nil));
+    return interpreter.executeBlock(this.statements, Environment(nil));
   }
 }
 
@@ -873,6 +876,9 @@ class If {
   str() {
     var s = "if (" + this.condition.str() + ") " + this.thenBranch.str();
     if (this.elseBranch != nil) {
+      for (var i = 0; i < indent; i = i + 1) {
+        s = s + "  ";
+      }
       s = s + "else " + this.elseBranch.str();
     }
     return s;
@@ -880,9 +886,9 @@ class If {
 
   execute(interpreter) {
     if (this.condition.evaluate(interpreter)) {
-      this.thenBranch.execute(interpreter);
+      return this.thenBranch.execute(interpreter);
     } else if (this.elseBranch != nil) {
-      this.elseBranch.execute(interpreter);
+      return this.elseBranch.execute(interpreter);
     }
   }
 }
@@ -965,7 +971,10 @@ class While {
 
   execute(interpreter) {
     while (this.condition.evaluate(interpreter)) {
-      this.body.execute(interpreter);
+      var ret = this.body.execute(interpreter);
+      if (ret) {
+        return ret;
+      }
     }
   }
 }
@@ -974,6 +983,7 @@ class While {
 
 class Parser {
   init() {
+    this.functionDepth = 0;
     this.scanner = Scanner();
     this.next();
   }
@@ -1124,6 +1134,9 @@ class Parser {
   }
 
   returnStatement() {
+    if (this.functionDepth <= 0) {
+      this.error("Cannot return from top-level code.");
+    }
     var value;
     if (this.token.type != SEMICOLON) {
       value = this.expression();
@@ -1174,7 +1187,9 @@ class Parser {
     }
     this.consume(RIGHT_PAREN, "Expect ')' after parameters.");
     this.consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+    this.functionDepth = this.functionDepth + 1;
     var body = this.block();
+    this.functionDepth = this.functionDepth - 1;
     return Function(name.value, parameters, body);
   }
 
@@ -1387,11 +1402,18 @@ class Interpreter {
   executeBlock(statements, environment) {
     var previous = this.environment;
     this.environment = environment;
+    var ret;
     fun executeStatement(statement) {
-      statement.execute(this);
+      ret = statement.execute(this);
+      if (ret) {
+        // Stop early if there was "return" statement
+        return true;
+      }
+      return false;
     }
     statements.foreach(executeStatement);
     this.environment = previous;
+    return ret;
   }
 
   // lookupVariable(name, expr) {
