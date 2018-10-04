@@ -304,6 +304,7 @@ class List {
   init() {
     this.head = nil;
     this.tail = nil;
+    this._length = 0;
   }
 
   append(value) {
@@ -315,15 +316,35 @@ class List {
       this.tail.next = node;
       this.tail = node;
     }
+    this._length = this._length + 1;
     return this;
   }
 
   foreach(f) {
     var node = this.head;
     while (node != nil) {
-      f(node.value);
+      if (f(node.value)) {
+        return;
+      }
       node = node.next;
     }
+  }
+
+  get(n) {
+    var node = this.head;
+    var i = 0;
+    while (node != nil) {
+      if (i == n) {
+        return node.value;
+      }
+      node = node.next;
+      i = i + 1;
+    }
+    return nil;
+  }
+
+  length() {
+    return this._length;
   }
 }
 
@@ -348,7 +369,10 @@ class Environment {
     fun findItem(item) {
       if (item.name == name) {
         found = item;
+        // Exit foreach loop early after finding it
+        return true;
       }
+      return false;
     }
     this.items.foreach(findItem);
     return found;
@@ -385,25 +409,27 @@ class Environment {
     if (item == nil) {
       this.items.append(EnvironmentItem(name, value));
     } else {
+      // Redefining a variable just sets it;
       item.value = value;
     }
   }
 
-  ancestor(distance) {
-    var environment = this;
-    for (var i = 0; i < distance; i = i + 1) {
-      environment = environment.enclosing;
-    }
-    return environment;
-  }
+  // TODO
+  // ancestor(distance) {
+  //   var environment = this;
+  //   for (var i = 0; i < distance; i = i + 1) {
+  //     environment = environment.enclosing;
+  //   }
+  //   return environment;
+  // }
 
-  getAt(distance, name) {
-    return this.ancestor(distance).find(name).value;
-  }
+  // getAt(distance, name) {
+  //   return this.ancestor(distance).find(name).value;
+  // }
 
-  assignAt(distance, name, value) {
-    this.ancestor(distance).find(name).value = value;
-  }
+  // assignAt(distance, name, value) {
+  //   this.ancestor(distance).find(name).value = value;
+  // }
 }
 
 
@@ -424,6 +450,10 @@ class Assign {
 
   evaluate(interpreter) {
     var value = this.value.evaluate(interpreter);
+    interpreter.environment.assign(this.name, value);
+    return value;
+    // TODO
+
     var distance = interpreter.locals.get(this);
     if (distance != nil) {
       interpreter.environment.assignAt(distance, this.name, value);
@@ -464,6 +494,40 @@ class Binary {
   }
 }
 
+class LoxFunction {
+  init(declaration, closure, isInitializer) {
+    this.declaration = declaration;
+    this.closure = closure;
+    this.isInitializer = isInitializer;
+  }
+
+  bind(instance) {
+    var environment = Environment(this.closure);
+    environment.define("this", instance);
+    return LoxFunction(this.declaration, environment, this.isInitializer);
+  }
+
+  arity() {
+    return this.declaration.params.length();
+  }
+
+  call(interpreter, arguments) {
+    var environment = Environment(this.closure);
+    var i = 0;
+    fun defineArg(name) {
+      environment.define(name, arguments.get(i));
+      i = i + 1;
+    }
+    this.declaration.params.foreach(defineArg);
+    // TODO: handle return values
+    interpreter.executeBlock(this.declaration.body, environment);
+    if (this.isInitializer) {
+      return this.closure.get("this");
+    }
+    return nil;
+  }
+}
+
 class Call {
   init(callee, arguments) {
     this.type = "Call";
@@ -493,12 +557,12 @@ class Call {
       arguments.append(argument.evaluate(interpreter));
     }
     this.arguments.foreach(addArgument);
-    if (arguments.length() != this.callee.arity()) {
-      print "loxlox: Expected " + numberStr(this.callee.arity()) +
+    if (arguments.length() != callee.arity()) {
+      print "loxlox: Expected " + numberStr(callee.arity()) +
         " arguments but got " + numberStr(arguments.length()) + ".";
       RUNTIME_ERROR;
     }
-    return this.callee.call(interpreter, arguments);
+    return callee.call(interpreter, arguments);
   }
 }
 
@@ -511,6 +575,10 @@ class Get {
   
   str() {
     return this.object.str() + "." + this.name;
+  }
+
+  evaluate(interpreter) {
+    TODO_Get;
   }
 }
 
@@ -601,8 +669,11 @@ class Set {
   }
 
   str() {
-    // TODO: is this correct?
     return this.object.str() + "." + this.name + " = " + this.value.str();
+  }
+
+  evaluate(interpreter) {
+    TODO_Set;
   }
 }
 
@@ -616,8 +687,8 @@ class Super {
     return "super." + this.method;
   }
 
-  evaluate() {
-    TODO;
+  evaluate(interpreter) {
+    TODO_Super;
   }
 }
 
@@ -630,8 +701,8 @@ class This {
     return "this";
   }
 
-  evaluate() {
-    TODO;
+  evaluate(interpreter) {
+    TODO_This;
   }
 }
 
@@ -663,8 +734,8 @@ class Variable {
     return this.name;
   }
 
-  evaluate() {
-    return interpreter.lookupVariable(this.name, this);
+  evaluate(interpreter) {
+    return interpreter.environment.get(this.name);
   }
 }
 
@@ -742,7 +813,7 @@ class Class {
   }
 
   execute(interpreter) {
-    TODO;
+    TODO_Class;
   }
 }
 
@@ -850,7 +921,7 @@ class Return {
   execute(interpreter) {
     var value;
     if (this.value != nil) {
-      value = value.evaluate(interpreter);
+      value = this.value.evaluate(interpreter);
     }
     return ReturnValue(value);
   }
@@ -1267,27 +1338,35 @@ class Parser {
 }
 
 
-// var statements = List();
-// statements.append(If(
-//   Literal("boolean", true),
-//   Block(List().append(
-//     Print(Literal("string", "TRUE"))
-//   ).append(
-//     Print(Literal("number", 42))
-//   ).append(If(
-//     Literal("boolean", false),
-//     Block(List().append(
-//       Print(Literal("string", "INNER"))
-//     )),
-//     nil
-//   ))),
-//   nil
-// ));
-// var program = Program(statements);
-// print program.str();
-
-
 // The interpreter
+
+class Builtin0 {
+  init(f) {
+    this.f = f;
+  }
+
+  arity() {
+    return 0;
+  }
+
+  call(interpreter, arguments) {
+    return this.f();
+  }
+}
+
+class Builtin1 {
+  init(f) {
+    this.f = f;
+  }
+
+  arity() {
+    return 1;
+  }
+
+  call(interpreter, arguments) {
+    return this.f(arguments.get(0));
+  }
+}
 
 class Interpreter {
   init(program) {
@@ -1296,9 +1375,9 @@ class Interpreter {
     this.environment = this.globals;
 
     // Define built-in functions
-    this.globals.define("clock", clock);
-    this.globals.define("getc", getc);
-    this.globals.define("chr", chr);
+    this.globals.define("clock", Builtin0(clock));
+    this.globals.define("getc", Builtin0(getc));
+    this.globals.define("chr", Builtin1(chr));
   }
 
   interpret() {
@@ -1315,19 +1394,22 @@ class Interpreter {
     this.environment = previous;
   }
 
-  lookupVariable(name, expr) {
-    var distance = this.locals.get(expr);
-    if (distance != nil) {
-      return this.environment.getAt(distance, name);
-    } else {
-      return this.globals.get(name);
-    }
-  }
+  // lookupVariable(name, expr) {
+  //   return this.globals.get(name);
+  //   // TODO
+  //   var distance = this.locals.get(expr);
+  //   if (distance != nil) {
+  //     return this.environment.getAt(distance, name);
+  //   } else {
+  //     return this.globals.get(name);
+  //   }
+  // }
 }
 
 var parser = Parser();
 var program = parser.parse();
 print program.str();
+print "-----";
 
-// var interpreter = Interpreter(program);
-// interpreter.interpret();
+var interpreter = Interpreter(program);
+interpreter.interpret();
