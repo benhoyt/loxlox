@@ -1,5 +1,11 @@
 // Lox interpreter written in ... Lox!
 
+// TODO decimal handling
+// also: test/number/trailing_dot.lox
+// also: test/number/decimal_point_at_eof.lox
+
+// TODO: string unicode - probably due to Java getc
+// test/string/literals.lox
 
 // Scanner: converts Lox source code input into tokens
 
@@ -131,11 +137,17 @@ fun keywordType(name) {
 }
 
 fun isNameStart(ch) {
+  if (ch == nil) {
+    return false;
+  }
   // '_' or 'a'<=ch<='z' or 'A'<=ch<='Z'
   return ch == 95 or (ch >= 97 and ch <= 122) or (ch >= 65 and ch <= 90);
 }
 
 fun isDigit(ch) {
+  if (ch == nil) {
+    return false;
+  }
   // '0'<=ch<='9'
   return ch >= 48 and ch <= 57;
 }
@@ -195,6 +207,9 @@ class Scanner {
         while (this.ch != nil and this.ch != 10) {
           this.ch = getc();
         }
+        if (this.ch == 10) {
+          this.line = this.line + 1;
+        }
         this.ch = getc();
       }
       else if (ch == 32 or ch == 9 or ch == 13) {
@@ -216,7 +231,7 @@ class Scanner {
           this.ch = getc();
         }
         if (this.ch == nil) {
-          return Token(INVALID, "Unterminated string '" + value + "'", this.line);
+          return Token(INVALID, "Unterminated string.", this.line);
         }
         this.ch = getc();
         return Token(STRING, value, line);
@@ -257,7 +272,7 @@ class Scanner {
         }
         return Token(IDENTIFIER, name, this.line);
       } else {
-        return Token(INVALID, "Unexpected character '" + chr(ch) + "'", this.line);
+        return Token(INVALID, "Unexpected character.", this.line);
       }
     }
     return Token(EOF, nil, this.line);
@@ -1005,13 +1020,22 @@ class Parser {
     this.previous = this.token;
     this.token = this.scanner.next();
     if (this.token.type == INVALID) {
-      this.error(this.token, this.value);
+      this.error(this.token, this.token.value);
     }
   }
 
   error(token, message) {
-    print_error("[line " + numberStr(this.token.line) + "] Error at '" +
-                tokenTypeStr(token.type) + "': " + message);
+    var at;
+    if (token.type == INVALID) {
+      at = "Error: ";
+    } else if (token.type == IDENTIFIER) {
+      at = "Error at '" + token.value + "': ";
+    } else if (token.type == NUMBER) {
+      at = "Error at '" + numberStr(token.value) + "': ";
+    } else {
+      at = "Error at '" + tokenTypeStr(token.type) + "': ";
+    }
+    print_error("[line " + numberStr(this.token.line) + "] " + at + message);
     exit(65);
   }
 
@@ -1190,13 +1214,22 @@ class Parser {
     var parameters = List();
     var n = 0;
     while (this.token.type != RIGHT_PAREN) {
+      if (n > 0) {
+        this.consume(COMMA, "Expect ')' after parameters.");
+      }
       if (n >= 8) {
         this.error(this.token, "Cannot have more than 8 parameters.");
       }
-      if (n > 0) {
-        this.consume(COMMA, "Expect ',' after parameter.");
-      }
       var paramName = this.consume(IDENTIFIER, "Expect parameter name.");
+
+      // Ensure we don't have duplicate param names (Lox does this in Resolver)
+      fun checkDupe(name) {
+        if (name == paramName.value) {
+          this.error(paramName, "Variable with this name already declared in this scope.");
+        }
+      }
+      parameters.foreach(checkDupe);
+
       parameters.append(paramName.value);
       n = n + 1;
     }
@@ -1314,11 +1347,11 @@ class Parser {
         var arguments = List();
         var n = 0;
         while (this.token.type != RIGHT_PAREN) {
+          if (n > 0) {
+            this.consume(COMMA, "Expect ')' after arguments.");
+          }
           if (n >= 8) {
             this.error(this.token, "Cannot have more than 8 arguments.");
-          }
-          if (n > 0) {
-            this.consume(COMMA, "Expect ',' after argument.");
           }
           arguments.append(this.expression());
           n = n + 1;
