@@ -1,8 +1,5 @@
 // Lox interpreter written in ... Lox!
 
-// TODO: run tests from craftingintepreter
-// - there are tests for Grouping (which we don't do)
-
 
 // Scanner: converts Lox source code input into tokens
 
@@ -389,8 +386,7 @@ class Environment {
     if (this.enclosing != nil) {
       return this.enclosing.get(name);
     }
-    print "loxlox: Undefined variable '" + name + "'.";
-    RUNTIME_ERROR;
+    runtimeError("Undefined variable '" + name + "'.");
   }
 
   assign(name, value) {
@@ -403,8 +399,7 @@ class Environment {
       this.enclosing.assign(name, value);
       return;
     }
-    print "loxlox: Undefined variable '" + name + "'.";
-    RUNTIME_ERROR;
+    runtimeError("Undefined variable '" + name + "'.");
   }
 
   define(name, value) {
@@ -564,9 +559,8 @@ class Call {
     }
     this.arguments.foreach(addArgument);
     if (arguments.length() != callee.arity()) {
-      print "loxlox: Expected " + numberStr(callee.arity()) +
-        " arguments but got " + numberStr(arguments.length()) + ".";
-      RUNTIME_ERROR;
+      runtimeError("Expected " + numberStr(callee.arity()) +
+                   " arguments but got " + numberStr(arguments.length()) + ".");
     }
     return callee.call(interpreter, arguments);
   }
@@ -585,6 +579,21 @@ class Get {
 
   evaluate(interpreter) {
     TODO_Get;
+  }
+}
+
+class Grouping {
+  init(expr) {
+    this.type = "Grouping";
+    this.expr = expr;
+  }
+
+  str() {
+    return "(" + this.expr.str() + ")";
+  }
+
+  evaluate(interpreter) {
+    return this.expr.evaluate(interpreter);
   }
 }
 
@@ -987,20 +996,23 @@ class While {
 class Parser {
   init() {
     this.functionDepth = 0;
+    this.token = nil;
     this.scanner = Scanner();
     this.next();
   }
 
   next() {
+    this.previous = this.token;
     this.token = this.scanner.next();
     if (this.token.type == INVALID) {
-      this.error(this.value);
+      this.error(this.token, this.value);
     }
   }
 
-  error(message) {
-    print "loxlox: [line " + numberStr(this.token.line) + "] " + message;
-    SYNTAX_ERROR;
+  error(token, message) {
+    print "[line " + numberStr(this.token.line) + "] Error at '" +
+          tokenTypeStr(token.type) + "': " + message;
+    exit(65);
   }
 
   match(type) {
@@ -1017,7 +1029,7 @@ class Parser {
     if (this.match(type)) {
       return token;
     }
-    this.error(message);
+    this.error(this.token, message);
   }
 
   parse() {
@@ -1138,7 +1150,7 @@ class Parser {
 
   returnStatement() {
     if (this.functionDepth <= 0) {
-      this.error("Cannot return from top-level code.");
+      this.error(this.previous, "Cannot return from top-level code.");
     }
     var value;
     if (this.token.type != SEMICOLON) {
@@ -1179,7 +1191,7 @@ class Parser {
     var n = 0;
     while (this.token.type != RIGHT_PAREN) {
       if (n >= 8) {
-        this.error("Cannot have more than 8 parameters.");
+        this.error(this.token, "Cannot have more than 8 parameters.");
       }
       if (n > 0) {
         this.consume(COMMA, "Expect ',' after parameter.");
@@ -1208,6 +1220,7 @@ class Parser {
   assignment() {
     var expr = this.or_();
     if (this.match(EQUAL)) {
+      var equals = this.previous;
       var value = this.assignment();
       if (expr.type == "Variable") {
         return Assign(expr.name, value);
@@ -1215,7 +1228,7 @@ class Parser {
       if (expr.type == "Get") {
         return Set(expr.object, expr.name, value);
       }
-      this.error("Invalid assignment target: " + expr.str());
+      this.error(equals, "Invalid assignment target.");
     }
     return expr;
   }
@@ -1302,7 +1315,7 @@ class Parser {
         var n = 0;
         while (this.token.type != RIGHT_PAREN) {
           if (n >= 8) {
-            this.error("Cannot have more than 8 arguments.");
+            this.error(this.token, "Cannot have more than 8 arguments.");
           }
           if (n > 0) {
             this.consume(COMMA, "Expect ',' after argument.");
@@ -1311,7 +1324,7 @@ class Parser {
           n = n + 1;
         }
         this.consume(RIGHT_PAREN, "Expect ')' after arguments.");
-        return Call(expr, arguments);
+        expr = Call(expr, arguments);
       } else if (this.match(DOT)) {
         var name = this.consume(IDENTIFIER, "Expect property name after '.'.");
         expr = Get(expr, name.value);
@@ -1349,9 +1362,9 @@ class Parser {
     if (this.match(LEFT_PAREN)) {
       var expr = this.expression();
       this.consume(RIGHT_PAREN, "Expect ')' after expression.");
-      return expr;
+      return Grouping(expr);
     }
-    this.error("Expect expression.");
+    this.error(this.token, "Expect expression.");
   }
 }
 
@@ -1396,6 +1409,7 @@ class Interpreter {
     this.globals.define("clock", Builtin0(clock));
     this.globals.define("getc", Builtin0(getc));
     this.globals.define("chr", Builtin1(chr));
+    this.globals.define("exit", Builtin1(exit));
   }
 
   interpret() {
@@ -1429,6 +1443,11 @@ class Interpreter {
   //     return this.globals.get(name);
   //   }
   // }
+}
+
+fun runtimeError(message) {
+  print message;
+  exit(70);
 }
 
 var parser = Parser();

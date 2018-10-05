@@ -1080,26 +1080,15 @@ def run_suites(names):
 def main(argv):
   global filter_path
 
-  if len(argv) < 2 or len(argv) > 3:
-    print('Usage: test.py <interpreter> [filter]')
+  if len(argv) < 1 or len(argv) > 2:
+    print('Usage: test.py [filter]')
     sys.exit(1)
 
-  if len(argv) == 3:
-    filter_path = argv[2]
+  if len(argv) == 2:
+    filter_path = argv[1]
 
-  if argv[1] == 'all':
-    run_suites(sorted(INTERPRETERS.keys()))
-  elif argv[1] == 'c':
-    run_suites(C_SUITES)
-  elif argv[1] == 'java':
-    run_suites(JAVA_SUITES)
-  elif argv[1] not in INTERPRETERS:
-    print('Unknown interpreter "{}"'.format(argv[1]))
+  if not run_suite('jlox'):
     sys.exit(1)
-
-  else:
-    if not run_suite(argv[1]):
-      sys.exit(1)
 
 
 if __name__ == '__main__':
