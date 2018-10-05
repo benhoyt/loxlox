@@ -1,9 +1,5 @@
 // Lox interpreter written in ... Lox!
 
-// TODO decimal handling
-// also: test/number/trailing_dot.lox
-// also: test/number/decimal_point_at_eof.lox
-
 // TODO: string unicode - probably due to Java getc
 // test/string/literals.lox
 
@@ -155,13 +151,27 @@ fun isDigit(ch) {
 class Scanner {
   init() {
     this.line = 1;
+    this.buffered = nil;
+    this.ch = nil;
+    this.advance();
+  }
+
+  advance() {
+    var ch = this.ch;
     this.ch = getc();
+    return ch;
   }
 
   next() {
+    // Support a one-character buffer for "123." use case to mimic Lox
+    if (this.buffered != nil) {
+      var buffered = this.buffered;
+      this.buffered = nil;
+      return buffered;
+    }
+
     while (this.ch != nil) {
-      var ch = this.ch;
-      this.ch = getc();
+      var ch = this.advance();
       if (ch == LEFT_PAREN) return Token(LEFT_PAREN, nil, this.line);
       else if (ch == RIGHT_PAREN) return Token(RIGHT_PAREN, nil, this.line);
       else if (ch == LEFT_BRACE) return Token(LEFT_BRACE, nil, this.line);
@@ -174,28 +184,28 @@ class Scanner {
       else if (ch == STAR) return Token(STAR, nil, this.line);
       else if (ch == BANG) {
         if (this.ch == EQUAL) {
-          this.ch = getc();
+          this.advance();
           return Token(BANG_EQUAL, nil, this.line);
         }
         return Token(BANG, nil, this.line);
       }
       else if (ch == EQUAL) {
         if (this.ch == EQUAL) {
-          this.ch = getc();
+          this.advance();
           return Token(EQUAL_EQUAL, nil, this.line);
         }
         return Token(EQUAL, nil, this.line);
       }
       else if (ch == LESS) {
         if (this.ch == EQUAL) {
-          this.ch = getc();
+          this.advance();
           return Token(LESS_EQUAL, nil, this.line);
         }
         return Token(LESS, nil, this.line);
       }
       else if (ch == GREATER) {
         if (this.ch == EQUAL) {
-          this.ch = getc();
+          this.advance();
           return Token(GREATER_EQUAL, nil, this.line);
         }
         return Token(GREATER, nil, this.line);
@@ -203,14 +213,14 @@ class Scanner {
       else if (ch == SLASH) {
         if (this.ch != SLASH) return Token(SLASH, nil, this.line);
         // Comment till end of line
-        this.ch = getc();
+        this.advance();
         while (this.ch != nil and this.ch != 10) {
-          this.ch = getc();
+          this.advance();
         }
         if (this.ch == 10) {
           this.line = this.line + 1;
         }
-        this.ch = getc();
+        this.advance();
       }
       else if (ch == 32 or ch == 9 or ch == 13) {
         // Ignore whitespace: space, tab, and carriage return
@@ -228,12 +238,12 @@ class Scanner {
             this.line = this.line + 1;
           }
           value = value + chr(this.ch);
-          this.ch = getc();
+          this.advance();
         }
         if (this.ch == nil) {
           return Token(INVALID, "Unterminated string.", this.line);
         }
-        this.ch = getc();
+        this.advance();
         return Token(STRING, value, line);
       }
       else if (isDigit(ch)) {
@@ -241,37 +251,40 @@ class Scanner {
         var num = ch - 48;
         while (isDigit(this.ch)) {
           num = num*10 + this.ch - 48;
-          this.ch = getc();
+          this.advance();
         }
         // Fractional part
         if (this.ch == DOT) {
-          this.ch = getc();
+          this.advance();
           if (!isDigit(this.ch)) {
-            return Token(INVALID, "Expected digit after .", this.line);
+            this.buffered = Token(DOT, nil, this.line);
+            return Token(NUMBER, num, this.line);
           }
           var numerator = 0;
           var denominator = 1;
           while (isDigit(this.ch)) {
             numerator = numerator*10 + this.ch - 48;
             denominator = denominator*10;
-            this.ch = getc();
+            this.advance();
           }
           num = num + numerator/denominator;
         }
         return Token(NUMBER, num, this.line);
-      } else if (isNameStart(ch)) {
+      }
+      else if (isNameStart(ch)) {
         // Identifiers and keywords
         var name = chr(ch);
         while (isNameStart(this.ch) or isDigit(this.ch)) {
           name = name + chr(this.ch);
-          this.ch = getc();
+          this.advance();
         }
         var keyword = keywordType(name);
         if (keyword != nil) {
           return Token(keyword, nil, this.line);
         }
         return Token(IDENTIFIER, name, this.line);
-      } else {
+      }
+      else {
         return Token(INVALID, "Unexpected character.", this.line);
       }
     }
@@ -613,7 +626,6 @@ class Grouping {
 }
 
 fun numberStr(num) {
-  // TODO: only handles integers right now
   var s = "";
   if (num < 0) {
     s = "-";
@@ -631,6 +643,22 @@ fun numberStr(num) {
     s = s + chr(digit + 48);
     num = num - mult*digit;
     mult = mult / 10;
+  }
+  if (num != 0) {
+    // Fractional part: only handles a fixed number of decimal
+    // places right now (3), but this is only used for pretty-printing
+    // the syntax tree and error messages, so that's probably fine.
+    s = s + ".";
+    num = num + 0.0005;
+    for (var places = 0; places < 3; places = places + 1) {
+      num = num * 10;
+      var digit = 0;
+      while (digit+1 <= num) {
+        digit = digit + 1;
+      }
+      s = s + chr(digit + 48);
+      num = num - digit;
+    }
   }
   return s;
 }
@@ -1028,6 +1056,8 @@ class Parser {
     var at;
     if (token.type == INVALID) {
       at = "Error: ";
+    } else if (token.type == EOF) {
+      at = "Error at end: ";
     } else if (token.type == IDENTIFIER) {
       at = "Error at '" + token.value + "': ";
     } else if (token.type == NUMBER) {
