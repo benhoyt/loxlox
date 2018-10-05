@@ -1010,8 +1010,8 @@ class Parser {
   }
 
   error(token, message) {
-    print "[line " + numberStr(this.token.line) + "] Error at '" +
-          tokenTypeStr(token.type) + "': " + message;
+    print_error("[line " + numberStr(this.token.line) + "] Error at '" +
+                tokenTypeStr(token.type) + "': " + message);
     exit(65);
   }
 
@@ -1446,7 +1446,8 @@ class Interpreter {
 }
 
 fun runtimeError(message) {
-  print message;
+  print_error(message);
+  print_error("[line 1]"); // TODO: this is hack (it's not always line 1)
   exit(70);
 }
 

@@ -954,7 +954,7 @@ def color_text(text, color):
   color, if supported."""
 
   # No ANSI escapes on Windows.
-  if sys.platform == 'win32':
+  if sys.platform == 'win32' or not sys.stdout.isatty():
     return str(text)
 
   return color + str(text) + '\033[0m'
