@@ -1,7 +1,6 @@
 // Lox interpreter written in ... Lox!
 
 // TODO: add Map and use instead of Environment for methods/fields
-// TODO: add parse error "Cannot use 'super' in a class with no superclass."
 // TODO: string unicode - probably due to Java getc: test/string/literals.lox
 // TODO: parser should synchronize and print multiple errors
 // TODO: proper Lox variable resolving
@@ -1208,6 +1207,7 @@ class Parser {
     }
 
     this.classDepth = this.classDepth + 1;
+    this.hasSuperClass = superclass != nil;
     this.consume(LEFT_BRACE, "Expect '{' before class body.");
     var methods = List();
     while (this.token.type != EOF and this.token.type != RIGHT_BRACE) {
@@ -1215,6 +1215,7 @@ class Parser {
     }
     this.consume(RIGHT_BRACE, "Expect '}' after class body.");
     this.classDepth = this.classDepth - 1;
+    this.hasSuperClass = false;
 
     return Class(name.value, superclass, methods);
   }
@@ -1516,6 +1517,9 @@ class Parser {
     if (this.match(SUPER)) {
       if (this.classDepth <= 0) {
         this.error(this.previous, "Cannot use 'super' outside of a class.");
+      }
+      if (!this.hasSuperClass) {
+        this.error(this.previous, "Cannot use 'super' in a class with no superclass.");
       }
       this.consume(DOT, "Expect '.' after 'super'.");
       var method = this.consume(IDENTIFIER, "Expect superclass method name.");
