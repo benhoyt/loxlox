@@ -2,7 +2,6 @@
 
 // TODO: add Map and use instead of Environment for methods/fields
 // TODO: add parse error "Cannot use 'super' in a class with no superclass."
-// TODO: add parse error "Cannot return a value from an initializer."
 // TODO: string unicode - probably due to Java getc: test/string/literals.lox
 // TODO: parser should synchronize and print multiple errors
 // TODO: proper Lox variable resolving
@@ -1303,6 +1302,9 @@ class Parser {
     if (this.functionDepth <= 0) {
       this.error(this.previous, "Cannot return from top-level code.");
     }
+    if (this.inInitializer) {
+      this.error(this.previous, "Cannot return a value from an initializer.");
+    }
     var value;
     if (this.token.type != SEMICOLON) {
       value = this.expression();
@@ -1362,9 +1364,13 @@ class Parser {
     }
     this.consume(RIGHT_PAREN, "Expect ')' after parameters.");
     this.consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+
     this.functionDepth = this.functionDepth + 1;
+    this.inInitializer = kind == "method" and name.value == "init";
     var body = this.block();
     this.functionDepth = this.functionDepth - 1;
+    this.inInitializer = false;
+
     return Function(name.value, parameters, body);
   }
 
