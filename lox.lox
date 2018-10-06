@@ -1,7 +1,12 @@
 // Lox interpreter written in ... Lox!
 
-// TODO: string unicode - probably due to Java getc
-// test/string/literals.lox
+// TODO: add Map and use instead of Environment for methods/fields
+// TODO: add parse error "Cannot use 'super' in a class with no superclass."
+// TODO: add parse error "Cannot return a value from an initializer."
+// TODO: string unicode - probably due to Java getc: test/string/literals.lox
+// TODO: parser should synchronize and print multiple errors
+// TODO: proper Lox variable resolving
+
 
 // Scanner: converts Lox source code input into tokens
 
@@ -606,7 +611,8 @@ class Get {
   }
 
   evaluate(interpreter) {
-    TODO_Get;
+    var object = this.object.evaluate(interpreter);
+    return object.get(this.name);
   }
 }
 
@@ -731,7 +737,10 @@ class Set {
   }
 
   evaluate(interpreter) {
-    TODO_Set;
+    var object = this.object.evaluate(interpreter);
+    var value = this.value.evaluate(interpreter);
+    object.set(this.name, value);
+    return value;
   }
 }
 
@@ -746,7 +755,13 @@ class Super {
   }
 
   evaluate(interpreter) {
-    TODO_Super;
+    var superclass = interpreter.environment.get("super");
+    var object = interpreter.environment.get("this");
+    var method = superclass.findMethod(object, this.method);
+    if (method == nil) {
+      runtimeError("Undefined property '" + this.method + "'.");
+    }
+    return method;
   }
 }
 
@@ -760,7 +775,7 @@ class This {
   }
 
   evaluate(interpreter) {
-    TODO_This;
+    return interpreter.environment.get("this"); 
   }
 }
 
@@ -853,6 +868,65 @@ class Block {
   }
 }
 
+class LoxInstance {
+  init(klass) {
+    this.klass = klass;
+    this.fields = Environment(nil); // Use this as a map (TODO bad idea?)
+  }
+
+  get(name) {
+    var field = this.fields.find(name);
+    if (field != nil) {
+      return field.value;
+    }
+    var method = this.klass.findMethod(this, name);
+    if (method != nil) {
+      return method;
+    }
+    runtimeError("Undefined property '" + name + "'.");
+  }
+
+  set(name, value) {
+    this.fields.define(name, value);
+  }
+}
+
+class LoxClass {
+  init(name, superclass, methods) {
+    this.name = name;
+    this.superclass = superclass;
+    this.methods = methods;
+  }
+
+  findMethod(instance, name) {
+    var method = this.methods.find(name);
+    if (method != nil) {
+      return method.value.bind(instance);
+    }
+    if (this.superclass != nil) {
+      return this.superclass.findMethod(instance, name);
+    }
+    return nil;
+  }
+
+  call(interpreter, arguments) {
+    var instance = LoxInstance(this);
+    var initializer = this.methods.find("init");
+    if (initializer != nil) {
+      initializer.value.bind(instance).call(interpreter, arguments);
+    }
+    return instance;
+  }
+
+  arity() {
+    var initializer = this.methods.find("init");
+    if (initializer != nil) {
+      return initializer.value.arity();
+    }
+    return 0;
+  }
+}
+
 class Class {
   init(name, superclass, methods) {
     this.type = "Class";
@@ -871,7 +945,27 @@ class Class {
   }
 
   execute(interpreter) {
-    TODO_Class;
+    var superclass;
+    interpreter.environment.define(this.name, nil);
+    if (this.superclass != nil) {
+      superclass = this.superclass.evaluate(interpreter);
+      interpreter.environment = Environment(interpreter.environment);
+      interpreter.environment.define("super", superclass);
+    }
+
+    var methods = Environment(nil); // Use this as a map (TODO bad idea?)
+    fun addMethod(method) {
+      var function = LoxFunction(method, interpreter.environment,
+                                 method.name == "init");
+      methods.define(method.name, function);
+    }
+    this.methods.foreach(addMethod);
+
+    var klass = LoxClass(this.name, superclass, methods);
+    if (this.superclass != nil) {
+      interpreter.environment = interpreter.environment.enclosing;
+    }
+    interpreter.environment.assign(this.name, klass);
   }
 }
 
@@ -1039,6 +1133,7 @@ class While {
 class Parser {
   init() {
     this.functionDepth = 0;
+    this.classDepth = 0;
     this.token = nil;
     this.scanner = Scanner();
     this.next();
@@ -1113,12 +1208,14 @@ class Parser {
       superclass = Variable(superName.value);
     }
 
+    this.classDepth = this.classDepth + 1;
     this.consume(LEFT_BRACE, "Expect '{' before class body.");
     var methods = List();
     while (this.token.type != EOF and this.token.type != RIGHT_BRACE) {
       methods.append(this.function("method"));
     }
     this.consume(RIGHT_BRACE, "Expect '}' after class body.");
+    this.classDepth = this.classDepth - 1;
 
     return Class(name.value, superclass, methods);
   }
@@ -1411,11 +1508,17 @@ class Parser {
       return Literal("string", string.value);
     }
     if (this.match(SUPER)) {
+      if (this.classDepth <= 0) {
+        this.error(this.previous, "Cannot use 'super' outside of a class.");
+      }
       this.consume(DOT, "Expect '.' after 'super'.");
       var method = this.consume(IDENTIFIER, "Expect superclass method name.");
       return Super(method.value);
     }
     if (this.match(THIS)) {
+      if (this.classDepth <= 0) {
+        this.error(this.previous, "Cannot use 'this' outside of a class.");
+      }
       return This();
     }
     var identifier = this.match(IDENTIFIER);
