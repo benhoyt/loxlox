@@ -1,8 +1,5 @@
 // Lox interpreter written in ... Lox!
 
-// TODO
-// FAIL: test/super/super_at_top_level.lox
-//      Missing expected error: [2] Error at 'super': Cannot use 'super' outside of a class.
 // TODO: string unicode - probably due to Java getc: test/string/literals.lox
 // TODO: parser should synchronize and print multiple errors
 // TODO: proper Lox variable resolving
@@ -320,7 +317,7 @@ fun testScanner() {
   }
 }
 
-// TODO: testScanner();
+// testScanner();
 
 
 // List: used in AST for lists of statements. We have to hand-craft
@@ -511,23 +508,6 @@ class Environment {
       item.value = value;
     }
   }
-
-  // TODO
-  // ancestor(distance) {
-  //   var environment = this;
-  //   for (var i = 0; i < distance; i = i + 1) {
-  //     environment = environment.enclosing;
-  //   }
-  //   return environment;
-  // }
-
-  // getAt(distance, name) {
-  //   return this.ancestor(distance).find(name).value;
-  // }
-
-  // assignAt(distance, name, value) {
-  //   this.ancestor(distance).find(name).value = value;
-  // }
 }
 
 
@@ -549,15 +529,6 @@ class Assign {
   evaluate(interpreter) {
     var value = this.value.evaluate(interpreter);
     interpreter.environment.assign(this.name, value);
-    return value;
-    // TODO
-
-    var distance = interpreter.locals.get(this);
-    if (distance != nil) {
-      interpreter.environment.assignAt(distance, this.name, value);
-    } else {
-      interpreter.globals.assign(this.name, value);
-    }
     return value;
   }
 }
@@ -1677,29 +1648,18 @@ class Interpreter {
     this.environment = previous;
     return ret;
   }
-
-  // lookupVariable(name, expr) {
-  //   return this.globals.get(name);
-  //   // TODO
-  //   var distance = this.locals.get(expr);
-  //   if (distance != nil) {
-  //     return this.environment.getAt(distance, name);
-  //   } else {
-  //     return this.globals.get(name);
-  //   }
-  // }
 }
 
 fun runtimeError(message) {
   print_error(message);
-  print_error("[line 1]"); // TODO: this is hack (it's not always line 1)
+  print_error("[line 1]"); // This is hack for tests (it's not always line 1)
   exit(70);
 }
 
 var parser = Parser();
 var program = parser.parse();
 
-// DEBUG: uncomment these two lines to pretty-print the parsed syntax tree
+// Uncomment these two lines to pretty-print the parsed syntax tree
 // print program.str();
 // print "-----";
 
