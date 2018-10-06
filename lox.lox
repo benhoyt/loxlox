@@ -1,6 +1,8 @@
 // Lox interpreter written in ... Lox!
 
-// TODO: add Map and use instead of Environment for methods/fields
+// TODO
+// FAIL: test/super/super_at_top_level.lox
+//      Missing expected error: [2] Error at 'super': Cannot use 'super' outside of a class.
 // TODO: string unicode - probably due to Java getc: test/string/literals.lox
 // TODO: parser should synchronize and print multiple errors
 // TODO: proper Lox variable resolving
@@ -338,6 +340,7 @@ class List {
     this._length = 0;
   }
 
+  // Append value to the end of the list.
   append(value) {
     var node = ListNode(value);
     if (this.head == nil) {
@@ -351,6 +354,8 @@ class List {
     return this;
   }
 
+  // Call f(value) for each value in the list, from first value
+  // appended to last. If f returns a truthy value, stop iterating.
   foreach(f) {
     var node = this.head;
     while (node != nil) {
@@ -361,6 +366,8 @@ class List {
     }
   }
 
+  // Get the nth (0-based) element of the list. Because it's a linked
+  // list (Lox doesn't have arrays), this is an O(n) operation.
   get(n) {
     var node = this.head;
     var i = 0;
@@ -374,8 +381,63 @@ class List {
     return nil;
   }
 
+  // Return the length of the list. The length is tracked is the list
+  // is appended to, so this is an O(1) operation.
   length() {
     return this._length;
+  }
+}
+
+
+// Map: a key-value map, implemented as a linked list because Lox
+// doesn't support indexable arrays or maps. This means
+// (unfortunately) that get and set are O(N) operations.
+
+class MapItem {
+  init(key, value) {
+    this.key = key;
+    this.value = value;
+  }
+}
+
+class Map {
+  init() {
+    this.items = List();
+  }
+
+  // Look for given key in map, return MapItem or nil.
+  find(key) {
+    var found;
+    fun findItem(item) {
+      if (item.key == key) {
+        found = item;
+        // Exit foreach loop early after finding it
+        return true;
+      }
+      return false;
+    }
+    this.items.foreach(findItem);
+    return found;
+  }
+
+  // Look for given key in map, return value or nil.
+  get(key) {
+    var item = this.find(key);
+    if (item != nil) {
+      return item.value;
+    }
+    return nil;
+  }
+
+  // Set given key to value in map. Overwrite if an item with the
+  // given key already exists.
+  set(key, value) {
+    var item = this.find(key);
+    if (item != nil) {
+      item.value = value;
+    } else {
+      this.items.append(MapItem(key, value));
+    }
   }
 }
 
@@ -395,6 +457,7 @@ class Environment {
     this.items = List();
   }
 
+  // Find name in this environment, returning EnvironmentItem or nil.
   find(name) {
     var found;
     fun findItem(item) {
@@ -409,6 +472,8 @@ class Environment {
     return found;
   }
 
+  // Find named value in environment, also looking in enclosing
+  // environments. Exit with runtime error if name not found.
   get(name) {
     var item = this.find(name);
     if (item != nil) {
@@ -420,6 +485,9 @@ class Environment {
     runtimeError("Undefined variable '" + name + "'.");
   }
 
+  // Assign an already-defined name in environment to value, also
+  // looking in enclosing environments. Exit with runtime error if
+  // name not found.
   assign(name, value) {
     var item = this.find(name);
     if (item != nil) {
@@ -433,6 +501,7 @@ class Environment {
     runtimeError("Undefined variable '" + name + "'.");
   }
 
+  // Define a name in this environment and set to value.
   define(name, value) {
     var item = this.find(name);
     if (item == nil) {
@@ -869,7 +938,7 @@ class Block {
 class LoxInstance {
   init(klass) {
     this.klass = klass;
-    this.fields = Environment(nil); // Use this as a map (TODO bad idea?)
+    this.fields = Map();
   }
 
   get(name) {
@@ -885,7 +954,7 @@ class LoxInstance {
   }
 
   set(name, value) {
-    this.fields.define(name, value);
+    this.fields.set(name, value);
   }
 }
 
@@ -951,11 +1020,11 @@ class Class {
       interpreter.environment.define("super", superclass);
     }
 
-    var methods = Environment(nil); // Use this as a map (TODO bad idea?)
+    var methods = Map();
     fun addMethod(method) {
       var function = LoxFunction(method, interpreter.environment,
                                  method.name == "init");
-      methods.define(method.name, function);
+      methods.set(method.name, function);
     }
     this.methods.foreach(addMethod);
 
@@ -1303,11 +1372,11 @@ class Parser {
     if (this.functionDepth <= 0) {
       this.error(this.previous, "Cannot return from top-level code.");
     }
-    if (this.inInitializer) {
-      this.error(this.previous, "Cannot return a value from an initializer.");
-    }
     var value;
     if (this.token.type != SEMICOLON) {
+      if (this.inInitializer) {
+        this.error(this.previous, "Cannot return a value from an initializer.");
+      }
       value = this.expression();
     }
     this.consume(SEMICOLON, "Expect ';' after return value.");

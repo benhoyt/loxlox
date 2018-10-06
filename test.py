@@ -949,12 +949,15 @@ class Test:
     self.failures.append(message)
 
 
+def supports_ansi():
+  return sys.platform != 'win32' and sys.stdout.isatty()
+
+
 def color_text(text, color):
   """Converts text to a string and wraps it in the ANSI escape sequence for
   color, if supported."""
 
-  # No ANSI escapes on Windows.
-  if sys.platform == 'win32' or not sys.stdout.isatty():
+  if not supports_ansi():
     return str(text)
 
   return color + str(text) + '\033[0m'
@@ -982,10 +985,13 @@ def walk(dir, callback):
 
 
 def print_line(line=None):
-  # Erase the line.
-  print('\033[2K', end='')
-  # Move the cursor to the beginning.
-  print('\r', end='')
+  if supports_ansi():
+    # Erase the line.
+    print('\033[2K', end='')
+    # Move the cursor to the beginning.
+    print('\r', end='')
+  else:
+    print()
   if line:
     print(line, end='')
     sys.stdout.flush()
