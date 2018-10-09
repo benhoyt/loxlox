@@ -1,8 +1,9 @@
 // Lox interpreter written in ... Lox!
 
 // TODO: string unicode - probably due to Java getc: test/string/literals.lox
-// TODO: parser should synchronize and print multiple errors
-// TODO: proper Lox variable resolving
+// TODO: fix tests that aren't actually failing but have different output in Lox
+// - eg: tests with multiple parser errors
+// TODO: perf: avoid !=nil in if statements?
 
 
 // Scanner: converts Lox source code input into tokens
@@ -321,12 +322,14 @@ fun testScanner() {
 
 
 // List: used in AST for lists of statements. We have to hand-craft
-// this as Lox doesn't have a built-in list or array type.
+// this as Lox doesn't have a built-in list or array type. (Also used
+// as a stack in the resolver.)
 
 class ListNode {
   init(value) {
     this.value = value;
     this.next = nil;
+    this.previous = nil;
   }
 }
 
@@ -344,11 +347,30 @@ class List {
       this.head = node;
       this.tail = node;
     } else {
+      node.previous = this.tail;
       this.tail.next = node;
       this.tail = node;
     }
     this._length = this._length + 1;
     return this;
+  }
+
+  // Pop the last value off the list and return it. Do nothing if
+  // list if empty;
+  pop() {
+    if (this.tail == nil) {
+      return;
+    }
+    var node = this.tail;
+    var previous = node.previous;
+    this.tail = previous;
+    if (previous != nil) {
+      previous.next = nil;
+    } else {
+      this.head = nil;
+    }
+    this._length = this._length - 1;
+    return node.value;
   }
 
   // Call f(value) for each value in the list, from first value
@@ -378,10 +400,18 @@ class List {
     return nil;
   }
 
-  // Return the length of the list. The length is tracked is the list
+  // Return the length of the list. The length is tracked as the list
   // is appended to, so this is an O(1) operation.
   length() {
     return this._length;
+  }
+
+  // Return the last element, or nil if list if empty.
+  last() {
+    if (this.tail != nil) {
+      return this.tail.value;
+    }
+    return nil;
   }
 }
 
@@ -451,28 +481,26 @@ class EnvironmentItem {
 class Environment {
   init(enclosing) {
     this.enclosing = enclosing;
-    this.items = List();
+    this.values = Map();
   }
 
-  // Find name in this environment, returning EnvironmentItem or nil.
-  find(name) {
-    var found;
-    fun findItem(item) {
-      if (item.name == name) {
-        found = item;
-        // Exit foreach loop early after finding it
-        return true;
-      }
-      return false;
+  printIt() { // TODO: remove
+    print "Environment:";
+    fun printItem(item) {
+      print item.key + " =>";
+      print item.value;
     }
-    this.items.foreach(findItem);
-    return found;
+    this.values.items.foreach(printItem);
+    if (this.enclosing != nil) {
+      print "--";
+      this.enclosing.printIt();
+    }
   }
 
   // Find named value in environment, also looking in enclosing
   // environments. Exit with runtime error if name not found.
   get(name) {
-    var item = this.find(name);
+    var item = this.values.find(name);
     if (item != nil) {
       return item.value;
     }
@@ -486,7 +514,7 @@ class Environment {
   // looking in enclosing environments. Exit with runtime error if
   // name not found.
   assign(name, value) {
-    var item = this.find(name);
+    var item = this.values.find(name);
     if (item != nil) {
       item.value = value;
       return;
@@ -500,13 +528,23 @@ class Environment {
 
   // Define a name in this environment and set to value.
   define(name, value) {
-    var item = this.find(name);
-    if (item == nil) {
-      this.items.append(EnvironmentItem(name, value));
-    } else {
-      // Redefining a variable just sets it;
-      item.value = value;
+    this.values.set(name, value);
+  }
+
+  ancestor(distance) {
+    var environment = this;
+    for (var i = 0; i < distance; i = i + 1) {
+      environment = environment.enclosing;
     }
+    return environment;
+  }
+
+  getAt(distance, name) {
+    return this.ancestor(distance).values.get(name);
+  }
+
+  assignAt(distance, name, value) {
+    this.ancestor(distance).values.set(name, value);
   }
 }
 
@@ -526,9 +564,19 @@ class Assign {
     return this.name + " = " + this.value.str();
   }
 
+  resolve(resolver) {
+    this.value.resolve(resolver);
+    resolver.resolveLocal(this, this.name);
+  }
+
   evaluate(interpreter) {
     var value = this.value.evaluate(interpreter);
-    interpreter.environment.assign(this.name, value);
+    var distance = interpreter.locals.get(this);
+    if (distance != nil) {
+      interpreter.environment.assignAt(distance, this.name, value);
+    } else {
+      interpreter.globals.assign(this.name, value);
+    }
     return value;
   }
 }
@@ -539,6 +587,11 @@ class Binary {
     this.left = left;
     this.operator = operator;
     this.right = right;
+  }
+
+  resolve(resolver) {
+    this.left.resolve(resolver);
+    this.right.resolve(resolver);
   }
 
   str() {
@@ -622,6 +675,14 @@ class Call {
     return s;
   }
 
+  resolve(resolver) {
+    this.callee.resolve(resolver);
+    fun resolveArgument(argument) {
+      argument.resolve(resolver);
+    }
+    this.arguments.foreach(resolveArgument);
+  }
+
   evaluate(interpreter) {
     var callee = this.callee.evaluate(interpreter);
     var arguments = List();
@@ -648,6 +709,10 @@ class Get {
     return this.object.str() + "." + this.name;
   }
 
+  resolve(resolver) {
+    this.object.resolve(resolver);
+  }
+
   evaluate(interpreter) {
     var object = this.object.evaluate(interpreter);
     return object.get(this.name);
@@ -662,6 +727,10 @@ class Grouping {
 
   str() {
     return "(" + this.expr.str() + ")";
+  }
+
+  resolve(resolver) {
+    this.expr.resolve(resolver);
   }
 
   evaluate(interpreter) {
@@ -734,6 +803,9 @@ class Literal {
     return "<unexpected kind>";
   }
 
+  resolve(resolver) {
+  }
+
   evaluate(interpreter) {
     return this.value;
   }
@@ -750,6 +822,11 @@ class Logical {
   str() {
     return "(" + this.left.str() + " " + tokenTypeStr(this.operator) +
            " " + this.right.str() + ")";
+  }
+
+  resolve(resolver) {
+    this.left.resolve(resolver);
+    this.right.resolve(resolver);
   }
 
   evaluate(interpreter) {
@@ -774,6 +851,11 @@ class Set {
     return this.object.str() + "." + this.name + " = " + this.value.str();
   }
 
+  resolve(resolver) {
+    this.value.resolve(resolver);
+    this.object.resolve(resolver);
+  }
+
   evaluate(interpreter) {
     var object = this.object.evaluate(interpreter);
     var value = this.value.evaluate(interpreter);
@@ -792,9 +874,14 @@ class Super {
     return "super." + this.method;
   }
 
+  resolve(resolver) {
+    resolver.resolveLocal(this, "super");
+  }
+
   evaluate(interpreter) {
-    var superclass = interpreter.environment.get("super");
-    var object = interpreter.environment.get("this");
+    var distance = interpreter.locals.get(this);
+    var superclass = interpreter.environment.getAt(distance, "super");
+    var object = interpreter.environment.getAt(distance - 1, "this");
     var method = superclass.findMethod(object, this.method);
     if (method == nil) {
       runtimeError("Undefined property '" + this.method + "'.");
@@ -812,8 +899,12 @@ class This {
     return "this";
   }
 
+  resolve(resolver) {
+    resolver.resolveLocal(this, "this");
+  }
+
   evaluate(interpreter) {
-    return interpreter.environment.get("this"); 
+    return interpreter.lookupVariable("this", this);
   }
 }
 
@@ -826,6 +917,10 @@ class Unary {
 
   str() {
     return tokenTypeStr(this.operator) + this.right.str();
+  }
+
+  resolve(resolver) {
+    this.right.resolve(resolver);
   }
 
   evaluate(interpreter) {
@@ -845,8 +940,15 @@ class Variable {
     return this.name;
   }
 
+  resolve(resolver) {
+    if (resolver.scopes.length() != 0 and resolver.scopes.last().get(this.name) == false) {
+      resolver.error("Cannot read local variable in its own initializer.");
+    }
+    resolver.resolveLocal(this, this.name);
+  }
+
   evaluate(interpreter) {
-    return interpreter.environment.get(this.name);
+    return interpreter.lookupVariable(this.name, this);
   }
 }
 
@@ -865,6 +967,13 @@ class Program {
     }
     this.statements.foreach(format);
     return s;
+  }
+
+  resolve(resolver) {
+    fun resolveStatement(statement) {
+      statement.resolve(resolver);
+    }
+    this.statements.foreach(resolveStatement);
   }
 
   execute(interpreter) {
@@ -899,6 +1008,15 @@ class Block {
     }
     s = s + "}" + chr(10);
     return s;
+  }
+
+  resolve(resolver) {
+    resolver.beginScope();
+    fun resolveStatement(statement) {
+      statement.resolve(resolver);
+    }
+    this.statements.foreach(resolveStatement);
+    resolver.endScope();
   }
 
   execute(interpreter) {
@@ -982,6 +1100,30 @@ class Class {
     return s;
   }
 
+  resolve(resolver) {
+    resolver.declare(this.name);
+    if (this.superclass != nil) {
+      this.superclass.resolve(resolver);
+    }
+    resolver.define(this.name);
+    if (this.superclass != nil) {
+      resolver.beginScope();
+      resolver.scopes.last().set("super", true);
+    }
+    resolver.beginScope();
+    resolver.scopes.last().set("this", true);
+
+    fun resolveMethod(method) {
+      resolver.resolveFunction(method);
+    }
+    this.methods.foreach(resolveMethod);
+
+    resolver.endScope();
+    if (this.superclass != nil) {
+      resolver.endScope();
+    }
+  }
+
   execute(interpreter) {
     var superclass;
     interpreter.environment.define(this.name, nil);
@@ -1017,6 +1159,10 @@ class Expression {
     return this.expression.str() + ";" + chr(10);
   }
 
+  resolve(resolver) {
+    this.expression.resolve(resolver);
+  }
+
   execute(interpreter) {
     this.expression.evaluate(interpreter);
   }
@@ -1046,6 +1192,12 @@ class Function {
     return s;
   }
 
+  resolve(resolver) {
+    resolver.declare(this.name);
+    resolver.define(this.name);
+    resolver.resolveFunction(this);
+  }
+
   execute(interpreter) {
     var function = LoxFunction(this, interpreter.environment, false);
     interpreter.environment.define(this.name, function);
@@ -1071,6 +1223,14 @@ class If {
     return s;
   }
 
+  resolve(resolver) {
+    this.condition.resolve(resolver);
+    this.thenBranch.resolve(resolver);
+    if (this.elseBranch != nil) {
+      this.elseBranch.resolve(resolver);
+    }
+  }
+
   execute(interpreter) {
     if (this.condition.evaluate(interpreter)) {
       return this.thenBranch.execute(interpreter);
@@ -1088,6 +1248,10 @@ class Print {
 
   str() {
     return "print " + this.expression.str() + ";" + chr(10);
+  }
+
+  resolve(resolver) {
+    this.expression.resolve(resolver);
   }
 
   execute(interpreter) {
@@ -1109,6 +1273,10 @@ class Return {
 
   str() {
     return "return " + this.value.str() + ";" + chr(10);
+  }
+
+  resolve(resolver) {
+    this.value.resolve(resolver);
   }
 
   execute(interpreter) {
@@ -1136,6 +1304,14 @@ class Var {
     return s;
   }
 
+  resolve(resolver) {
+    resolver.declare(this.name);
+    if (this.initializer != nil) {
+      this.initializer.resolve(resolver);
+    }
+    resolver.define(this.name);
+  }
+
   execute(interpreter) {
     var value;
     if (this.initializer != nil) {
@@ -1156,6 +1332,11 @@ class While {
     return "while (" + this.condition.str() + ") " + this.body.str();
   }
 
+  resolve(resolver) {
+    this.condition.resolve(resolver);
+    this.body.resolve(resolver);
+  }
+
   execute(interpreter) {
     while (this.condition.evaluate(interpreter)) {
       var ret = this.body.execute(interpreter);
@@ -1165,6 +1346,7 @@ class While {
     }
   }
 }
+
 
 // The parser
 
@@ -1391,15 +1573,6 @@ class Parser {
         this.error(this.token, "Cannot have more than 8 parameters.");
       }
       var paramName = this.consume(IDENTIFIER, "Expect parameter name.");
-
-      // Ensure we don't have duplicate param names (Lox does this in Resolver)
-      fun checkDupe(name) {
-        if (name == paramName.value) {
-          this.error(paramName, "Variable with this name already declared in this scope.");
-        }
-      }
-      parameters.foreach(checkDupe);
-
       parameters.append(paramName.value);
       n = n + 1;
     }
@@ -1615,11 +1788,85 @@ class Builtin1 {
   }
 }
 
+
+// The variable resolver
+
+class Resolver {
+  init(program, interpreter) {
+    this.program = program;
+    this.interpreter = interpreter;
+    this.scopes = List(); // List can be used as a stack too
+  }
+
+  error(message) {
+    print_error(message);
+    exit(65);
+  }
+
+  resolve() {
+    this.program.resolve(this);
+  }
+
+  resolveFunction(function) {
+    this.beginScope();
+    fun declareParam(param) {
+      this.declare(param);
+      this.define(param);
+    }
+    function.params.foreach(declareParam);
+    fun resolveStatement(statement) {
+      statement.resolve(resolver);
+    }
+    function.body.foreach(resolveStatement);
+    this.endScope();
+  }
+
+  beginScope() {
+    this.scopes.append(Map());
+  }
+
+  endScope() {
+    this.scopes.pop();
+  }
+
+  declare(name) {
+    if (this.scopes.length() == 0) {
+      return;
+    }
+    var scope = this.scopes.last();
+    if (scope.find(name)) {
+      this.error("Variable with this name already declared in this scope.");
+    }
+    scope.set(name, false);
+  }
+
+  define(name) {
+    if (this.scopes.length() == 0) {
+      return;
+    }
+    this.scopes.last().set(name, true);
+  }
+
+  resolveLocal(expr, name) {
+    for (var i = 0; i < this.scopes.length(); i = i + 1) {
+      if (this.scopes.get(i).find(name)) {
+        this.interpreter.resolve(expr, this.scopes.length() - 1 - i);
+        return;
+      }
+    }
+    // Not found, assume it's a global
+  }
+}
+
+
+// The tree-walking interpreter
+
 class Interpreter {
   init(program) {
     this.program = program;
     this.globals = Environment(nil);
     this.environment = this.globals;
+    this.locals = Map();
 
     // Define built-in functions
     this.globals.define("clock", Builtin0(clock));
@@ -1648,6 +1895,19 @@ class Interpreter {
     this.environment = previous;
     return ret;
   }
+
+  resolve(expr, depth) {
+    this.locals.set(expr, depth);
+  }
+
+  lookupVariable(name, expr) {
+    var distance = this.locals.get(expr);
+    if (distance != nil) {
+      return this.environment.getAt(distance, name);
+    } else {
+      return this.globals.get(name);
+    }
+  }
 }
 
 fun runtimeError(message) {
@@ -1664,4 +1924,6 @@ var program = parser.parse();
 // print "-----";
 
 var interpreter = Interpreter(program);
+var resolver = Resolver(program, interpreter);
+resolver.resolve();
 interpreter.interpret();
