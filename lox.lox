@@ -566,7 +566,7 @@ class Assign {
 
   resolve(resolver) {
     this.value.resolve(resolver);
-    resolver.resolveLocal(this, this.name);
+    resolver.resolveVar(this, this.name);
   }
 
   evaluate(interpreter) {
@@ -875,7 +875,7 @@ class Super {
   }
 
   resolve(resolver) {
-    resolver.resolveLocal(this, "super");
+    resolver.resolveVar(this, "super");
   }
 
   evaluate(interpreter) {
@@ -900,7 +900,7 @@ class This {
   }
 
   resolve(resolver) {
-    resolver.resolveLocal(this, "this");
+    resolver.resolveVar(this, "this");
   }
 
   evaluate(interpreter) {
@@ -944,7 +944,7 @@ class Variable {
     if (resolver.scopes.length() != 0 and resolver.scopes.last().get(this.name) == false) {
       resolver.error("Cannot read local variable in its own initializer.");
     }
-    resolver.resolveLocal(this, this.name);
+    resolver.resolveVar(this, this.name);
   }
 
   evaluate(interpreter) {
@@ -1276,7 +1276,9 @@ class Return {
   }
 
   resolve(resolver) {
-    this.value.resolve(resolver);
+    if (this.value != nil) {
+      this.value.resolve(resolver);
+    }
   }
 
   execute(interpreter) {
@@ -1847,7 +1849,7 @@ class Resolver {
     this.scopes.last().set(name, true);
   }
 
-  resolveLocal(expr, name) {
+  resolveVar(expr, name) {
     for (var i = 0; i < this.scopes.length(); i = i + 1) {
       if (this.scopes.get(i).find(name)) {
         this.interpreter.resolve(expr, this.scopes.length() - 1 - i);
