@@ -764,8 +764,8 @@ class Test:
           expectations += 1
 
         match = ERROR_EXPECT.search(line)
-        if match:
-          self.compile_errors.add("[{0}] {1}".format(line_num, match.group(1)))
+        if match and not self.compile_errors:
+          self.compile_errors.add(match.group(1))
 
           # If we expect a compile error, it should exit with EX_DATAERR.
           self.exit_code = 65
@@ -779,9 +779,8 @@ class Test:
           # the tests can indicate if an error line should only appear for a
           # certain interpreter.
           language = match.group(2)
-          if not language or language == interpreter.language:
-            self.compile_errors.add("[{0}] {1}".format(
-                match.group(3), match.group(4)))
+          if (not language or language == interpreter.language) and not self.compile_errors:
+            self.compile_errors.add(match.group(4))
 
             # If we expect a compile error, it should exit with EX_DATAERR.
             self.exit_code = 65
@@ -886,7 +885,7 @@ class Test:
     for line in error_lines:
       match = SYNTAX_ERROR_RE.search(line)
       if match:
-        error = "[{0}] {1}".format(match.group(1), match.group(2))
+        error = match.group(2)
         if error in self.compile_errors:
           found_errors.add(error)
         else:

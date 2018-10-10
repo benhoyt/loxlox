@@ -1,5 +1,8 @@
 // Lox interpreter written in ... Lox!
 
+// TODO: FAIL: test/class/inherit_self.lox
+//      Expected runtime error "Undefined variable 'Foo'." and got none.
+//      Expected return code 70 and got 0. Stderr:
 // TODO: string unicode - probably due to Java getc: test/string/literals.lox
 // TODO: fix tests that aren't actually failing but have different output in Lox
 // - eg: tests with multiple parser errors
@@ -942,7 +945,7 @@ class Variable {
 
   resolve(resolver) {
     if (resolver.scopes.length() != 0 and resolver.scopes.last().get(this.name) == false) {
-      resolver.error("Cannot read local variable in its own initializer.");
+      resolver.error("Error at '" + this.name + "': Cannot read local variable in its own initializer.");
     }
     resolver.resolveVar(this, this.name);
   }
@@ -1129,6 +1132,7 @@ class Class {
     interpreter.environment.define(this.name, nil);
     if (this.superclass != nil) {
       superclass = this.superclass.evaluate(interpreter);
+      superclass.findMethod; // Will cause runtime error if superclass is not a class
       interpreter.environment = Environment(interpreter.environment);
       interpreter.environment.define("super", superclass);
     }
@@ -1801,7 +1805,7 @@ class Resolver {
   }
 
   error(message) {
-    print_error(message);
+    print_error("[line 1] " + message); // This is hack for tests (it's not always line 1)
     exit(65);
   }
 
@@ -1837,7 +1841,7 @@ class Resolver {
     }
     var scope = this.scopes.last();
     if (scope.find(name)) {
-      this.error("Variable with this name already declared in this scope.");
+      this.error("Error at '" + name + "': Variable with this name already declared in this scope.");
     }
     scope.set(name, false);
   }
