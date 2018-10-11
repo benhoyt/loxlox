@@ -1,9 +1,6 @@
 // Lox interpreter written in ... Lox!
 
-// TODO: FAIL: test/class/inherit_self.lox
-//      Expected runtime error "Undefined variable 'Foo'." and got none.
-//      Expected return code 70 and got 0. Stderr:
-// TODO: string unicode - probably due to Java getc: test/string/literals.lox
+// TODO: make getc() return -1 for EOF
 // TODO: fix tests that aren't actually failing but have different output in Lox
 // - eg: tests with multiple parser errors
 // TODO: perf: avoid !=nil in if statements?
