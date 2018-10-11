@@ -1,10 +1,5 @@
 // Lox interpreter written in ... Lox!
 
-// TODO: make getc() return -1 for EOF
-// TODO: fix tests that aren't actually failing but have different output in Lox
-// - eg: tests with multiple parser errors
-// TODO: perf: avoid !=nil in if statements?
-
 
 // Scanner: converts Lox source code input into tokens
 
@@ -136,17 +131,11 @@ fun keywordType(name) {
 }
 
 fun isNameStart(ch) {
-  if (ch == nil) {
-    return false;
-  }
   // '_' or 'a'<=ch<='z' or 'A'<=ch<='Z'
   return ch == 95 or (ch >= 97 and ch <= 122) or (ch >= 65 and ch <= 90);
 }
 
 fun isDigit(ch) {
-  if (ch == nil) {
-    return false;
-  }
   // '0'<=ch<='9'
   return ch >= 48 and ch <= 57;
 }
@@ -155,7 +144,7 @@ class Scanner {
   init() {
     this.line = 1;
     this.buffered = nil;
-    this.ch = nil;
+    this.ch = -1;
     this.advance();
   }
 
@@ -173,7 +162,7 @@ class Scanner {
       return buffered;
     }
 
-    while (this.ch != nil) {
+    while (this.ch >= 0) {
       var ch = this.advance();
       if (ch == LEFT_PAREN) return Token(LEFT_PAREN, nil, this.line);
       else if (ch == RIGHT_PAREN) return Token(RIGHT_PAREN, nil, this.line);
@@ -217,7 +206,7 @@ class Scanner {
         if (this.ch != SLASH) return Token(SLASH, nil, this.line);
         // Comment till end of line
         this.advance();
-        while (this.ch != nil and this.ch != 10) {
+        while (this.ch >= 0 and this.ch != 10) {
           this.advance();
         }
         if (this.ch == 10) {
@@ -236,14 +225,14 @@ class Scanner {
         // Strings (start and end with double quote)
         var line = this.line;
         var value = "";
-        while (this.ch != nil and this.ch != 34) {
+        while (this.ch >= 0 and this.ch != 34) {
           if (this.ch == 10) {
             this.line = this.line + 1;
           }
           value = value + chr(this.ch);
           this.advance();
         }
-        if (this.ch == nil) {
+        if (this.ch < 0) {
           return Token(INVALID, "Unterminated string.", this.line);
         }
         this.advance();
