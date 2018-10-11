@@ -473,19 +473,6 @@ class Environment {
     this.values = Map();
   }
 
-  printIt() { // TODO: remove
-    print "Environment:";
-    fun printItem(item) {
-      print item.key + " =>";
-      print item.value;
-    }
-    this.values.items.foreach(printItem);
-    if (this.enclosing != nil) {
-      print "--";
-      this.enclosing.printIt();
-    }
-  }
-
   // Find named value in environment, also looking in enclosing
   // environments. Exit with runtime error if name not found.
   get(name) {
@@ -538,7 +525,9 @@ class Environment {
 }
 
 
-// Syntax tree nodes
+// Syntax tree nodes. Note that this is a NVAST (Not Very Abstract
+// Syntax Tree :-), because each node includes a method to resolve
+// and evaluate/execute itself. Done for simplicity.
 
 // Expressions
 
@@ -727,6 +716,9 @@ class Grouping {
   }
 }
 
+// Convert a number to its decimal string representation. Used only
+// for pretty-printing the AST (disabled by default) and for showing
+// things like line numbers in error messages.
 fun numberStr(num) {
   var s = "";
   if (num < 0) {
