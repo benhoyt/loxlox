@@ -1129,10 +1129,14 @@ class Class {
 
   execute(interpreter) {
     var superclass;
-    interpreter.environment.define(this.name, nil);
     if (this.superclass != nil) {
       superclass = this.superclass.evaluate(interpreter);
-      superclass.findMethod; // Will cause runtime error if superclass is not a class
+      // The following will cause a runtime error if the superclass
+      // is not a class
+      superclass.findMethod;
+    }
+    interpreter.environment.define(this.name, nil);
+    if (this.superclass != nil) {
       interpreter.environment = Environment(interpreter.environment);
       interpreter.environment.define("super", superclass);
     }
