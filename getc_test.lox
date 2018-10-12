@@ -1,0 +1,9 @@
+var done = false;
+while (!done) {
+  var c = getc();
+  if (c >= 0) {
+    print c;
+  } else {
+    done = true;
+  }
+}
