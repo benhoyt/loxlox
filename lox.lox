@@ -61,6 +61,8 @@ class Token {
   }
 }
 
+// Convert a token type constant back to the source string that the
+// token represents.
 fun tokenTypeStr(type) {
   if (type == LEFT_PAREN) return "(";
   if (type == RIGHT_PAREN) return ")";
@@ -110,6 +112,8 @@ fun tokenTypeStr(type) {
   return nil;
 }
 
+// Convert a keyword string to its token type constant, or return nil
+// if it's not a keyword.
 fun keywordType(name) {
   if (name == "and") return AND;
   if (name == "class") return CLASS;
@@ -525,6 +529,48 @@ class Environment {
 }
 
 
+// Convert a number to its decimal string representation. Used only
+// for pretty-printing the AST (disabled by default) and for showing
+// things like line numbers in error messages.
+fun numberStr(num) {
+  var s = "";
+  if (num < 0) {
+    s = "-";
+    num = -num;
+  }
+  var mult = 1;
+  while (mult*10 <= num) {
+    mult = mult * 10;
+  }
+  while (mult >= 1) {
+    var digit = 0;
+    while (mult*(digit+1) <= num) {
+      digit = digit + 1;
+    }
+    s = s + chr(digit + 48);
+    num = num - mult*digit;
+    mult = mult / 10;
+  }
+  if (num != 0) {
+    // Fractional part: only handles a fixed number of decimal
+    // places right now (3), but this is only used for pretty-printing
+    // the syntax tree and error messages, so that's probably fine.
+    s = s + ".";
+    num = num + 0.0005;
+    for (var places = 0; places < 3; places = places + 1) {
+      num = num * 10;
+      var digit = 0;
+      while (digit+1 <= num) {
+        digit = digit + 1;
+      }
+      s = s + chr(digit + 48);
+      num = num - digit;
+    }
+  }
+  return s;
+}
+
+
 // Syntax tree nodes. Note that this is a NVAST (Not Very Abstract
 // Syntax Tree :-), because each node includes a method to resolve
 // and evaluate/execute itself. Done for simplicity.
@@ -591,43 +637,6 @@ class Binary {
     if (this.operator == LESS) return left < right;
     if (this.operator == LESS_EQUAL) return left <= right;
     return nil; // Unreachable
-  }
-}
-
-class LoxFunction {
-  init(declaration, closure, isInitializer) {
-    this.declaration = declaration;
-    this.closure = closure;
-    this.isInitializer = isInitializer;
-  }
-
-  bind(instance) {
-    var environment = Environment(this.closure);
-    environment.define("this", instance);
-    return LoxFunction(this.declaration, environment, this.isInitializer);
-  }
-
-  arity() {
-    return this.declaration.params.length();
-  }
-
-  call(interpreter, arguments) {
-    var environment = Environment(this.closure);
-    var i = 0;
-    fun defineArg(name) {
-      environment.define(name, arguments.get(i));
-      i = i + 1;
-    }
-    this.declaration.params.foreach(defineArg);
-
-    var ret = interpreter.executeBlock(this.declaration.body, environment);
-    if (this.isInitializer) {
-      return this.closure.get("this");
-    }
-    if (ret) {
-      return ret.value;
-    }
-    return nil;
   }
 }
 
@@ -714,47 +723,6 @@ class Grouping {
   evaluate(interpreter) {
     return this.expr.evaluate(interpreter);
   }
-}
-
-// Convert a number to its decimal string representation. Used only
-// for pretty-printing the AST (disabled by default) and for showing
-// things like line numbers in error messages.
-fun numberStr(num) {
-  var s = "";
-  if (num < 0) {
-    s = "-";
-    num = -num;
-  }
-  var mult = 1;
-  while (mult*10 <= num) {
-    mult = mult * 10;
-  }
-  while (mult >= 1) {
-    var digit = 0;
-    while (mult*(digit+1) <= num) {
-      digit = digit + 1;
-    }
-    s = s + chr(digit + 48);
-    num = num - mult*digit;
-    mult = mult / 10;
-  }
-  if (num != 0) {
-    // Fractional part: only handles a fixed number of decimal
-    // places right now (3), but this is only used for pretty-printing
-    // the syntax tree and error messages, so that's probably fine.
-    s = s + ".";
-    num = num + 0.0005;
-    for (var places = 0; places < 3; places = places + 1) {
-      num = num * 10;
-      var digit = 0;
-      while (digit+1 <= num) {
-        digit = digit + 1;
-      }
-      s = s + chr(digit + 48);
-      num = num - digit;
-    }
-  }
-  return s;
 }
 
 class Literal {
@@ -1002,65 +970,6 @@ class Block {
 
   execute(interpreter) {
     return interpreter.executeBlock(this.statements, Environment(interpreter.environment));
-  }
-}
-
-class LoxInstance {
-  init(klass) {
-    this.klass = klass;
-    this.fields = Map();
-  }
-
-  get(name) {
-    var field = this.fields.find(name);
-    if (field != nil) {
-      return field.value;
-    }
-    var method = this.klass.findMethod(this, name);
-    if (method != nil) {
-      return method;
-    }
-    runtimeError("Undefined property '" + name + "'.");
-  }
-
-  set(name, value) {
-    this.fields.set(name, value);
-  }
-}
-
-class LoxClass {
-  init(name, superclass, methods) {
-    this.name = name;
-    this.superclass = superclass;
-    this.methods = methods;
-  }
-
-  findMethod(instance, name) {
-    var method = this.methods.find(name);
-    if (method != nil) {
-      return method.value.bind(instance);
-    }
-    if (this.superclass != nil) {
-      return this.superclass.findMethod(instance, name);
-    }
-    return nil;
-  }
-
-  call(interpreter, arguments) {
-    var instance = LoxInstance(this);
-    var initializer = this.methods.find("init");
-    if (initializer != nil) {
-      initializer.value.bind(instance).call(interpreter, arguments);
-    }
-    return instance;
-  }
-
-  arity() {
-    var initializer = this.methods.find("init");
-    if (initializer != nil) {
-      return initializer.value.arity();
-    }
-    return 0;
   }
 }
 
@@ -1332,6 +1241,133 @@ class While {
         return ret;
       }
     }
+  }
+}
+
+
+// Lox runtime objects
+
+class LoxFunction {
+  init(declaration, closure, isInitializer) {
+    this.declaration = declaration;
+    this.closure = closure;
+    this.isInitializer = isInitializer;
+  }
+
+  bind(instance) {
+    var environment = Environment(this.closure);
+    environment.define("this", instance);
+    return LoxFunction(this.declaration, environment, this.isInitializer);
+  }
+
+  arity() {
+    return this.declaration.params.length();
+  }
+
+  call(interpreter, arguments) {
+    var environment = Environment(this.closure);
+    var i = 0;
+    fun defineArg(name) {
+      environment.define(name, arguments.get(i));
+      i = i + 1;
+    }
+    this.declaration.params.foreach(defineArg);
+
+    var ret = interpreter.executeBlock(this.declaration.body, environment);
+    if (this.isInitializer) {
+      return this.closure.get("this");
+    }
+    if (ret) {
+      return ret.value;
+    }
+    return nil;
+  }
+}
+
+class LoxInstance {
+  init(klass) {
+    this.klass = klass;
+    this.fields = Map();
+  }
+
+  get(name) {
+    var field = this.fields.find(name);
+    if (field != nil) {
+      return field.value;
+    }
+    var method = this.klass.findMethod(this, name);
+    if (method != nil) {
+      return method;
+    }
+    runtimeError("Undefined property '" + name + "'.");
+  }
+
+  set(name, value) {
+    this.fields.set(name, value);
+  }
+}
+
+class LoxClass {
+  init(name, superclass, methods) {
+    this.name = name;
+    this.superclass = superclass;
+    this.methods = methods;
+  }
+
+  findMethod(instance, name) {
+    var method = this.methods.find(name);
+    if (method != nil) {
+      return method.value.bind(instance);
+    }
+    if (this.superclass != nil) {
+      return this.superclass.findMethod(instance, name);
+    }
+    return nil;
+  }
+
+  call(interpreter, arguments) {
+    var instance = LoxInstance(this);
+    var initializer = this.methods.find("init");
+    if (initializer != nil) {
+      initializer.value.bind(instance).call(interpreter, arguments);
+    }
+    return instance;
+  }
+
+  arity() {
+    var initializer = this.methods.find("init");
+    if (initializer != nil) {
+      return initializer.value.arity();
+    }
+    return 0;
+  }
+}
+
+class Builtin0 {
+  init(f) {
+    this.f = f;
+  }
+
+  arity() {
+    return 0;
+  }
+
+  call(interpreter, arguments) {
+    return this.f();
+  }
+}
+
+class Builtin1 {
+  init(f) {
+    this.f = f;
+  }
+
+  arity() {
+    return 1;
+  }
+
+  call(interpreter, arguments) {
+    return this.f(arguments.get(0));
   }
 }
 
@@ -1746,37 +1782,6 @@ class Parser {
 }
 
 
-// The interpreter
-
-class Builtin0 {
-  init(f) {
-    this.f = f;
-  }
-
-  arity() {
-    return 0;
-  }
-
-  call(interpreter, arguments) {
-    return this.f();
-  }
-}
-
-class Builtin1 {
-  init(f) {
-    this.f = f;
-  }
-
-  arity() {
-    return 1;
-  }
-
-  call(interpreter, arguments) {
-    return this.f(arguments.get(0));
-  }
-}
-
-
 // The variable resolver
 
 class Resolver {
@@ -1861,6 +1866,7 @@ class Interpreter {
     this.globals.define("getc", Builtin0(getc));
     this.globals.define("chr", Builtin1(chr));
     this.globals.define("exit", Builtin1(exit));
+    this.globals.define("print_error", Builtin1(print_error));
   }
 
   interpret() {
