@@ -15,7 +15,7 @@ $ git clone https://github.com/benhoyt/loxlox
 $ git clone https://github.com/munificent/craftinginterpreters
 ```
 
-Then patch the Crafting Interpreters repo to add the required builtins to JLox (`getc()`, `chr()`, etc) and build JLox:
+Then patch the Crafting Interpreters repo to add the required builtins to JLox (`getc`, `chr`, etc) and build JLox:
 
 ```
 $ cd craftinginterpreters
@@ -24,7 +24,7 @@ $ make jlox
 $ cd ../loxlox
 ```
 
-Now you're ready to run LoxLox (input can only be passed to LoxLox on stdin):
+Now you're ready to run LoxLox (input is passed to LoxLox on stdin):
 
 ```
 $ 
@@ -44,20 +44,21 @@ Hello world!
 
 ## Running the tests
 
-To run the Lox test suite against LoxLox, use this command:
+To run the Lox test suite under LoxLox, use this command:
 
 ```
 $ python test.py
 ```
 
-Note that several tests will fail. That's expected -- the code works, and the failures are only from differences in the runtime error messages between JLox and LoxLox.
+Note that several tests will fail. That's expected -- the code works; the remaining failures are only from differences in the runtime error messages between JLox and LoxLox.
 
-To run the tests and diff against the git-committed failure output:
+To run the tests and diff against the git-committed failures file (should be no diffs):
 
 ```
 $ python test.py > failures
+$ git diff failures
 ```
 
 ## Contact me
 
-[Contact me](https://benhoyt.com/) if you have any feedback, suggestions, or whatever. And if you get LoxLox to run under LoxLox ... mind blown.
+[Contact me](https://benhoyt.com/) if you have any feedback or suggestions. And if you get LoxLox to run under LoxLox ... mind blown.
