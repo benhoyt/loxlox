@@ -1,0 +1,97 @@
+diff --git a/java/com/craftinginterpreters/lox/Interpreter.java b/java/com/craftinginterpreters/lox/Interpreter.java
+index da0bf05..b1b9eb0 100644
+--- a/java/com/craftinginterpreters/lox/Interpreter.java
++++ b/java/com/craftinginterpreters/lox/Interpreter.java
+@@ -1,6 +1,10 @@
+ //> Evaluating Expressions interpreter-class
+ package com.craftinginterpreters.lox;
+ 
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.nio.charset.StandardCharsets;
++
+ //> Functions import-array-list
+ import java.util.ArrayList;
+ //< Functions import-array-list
+@@ -33,6 +37,8 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+ //< Resolving and Binding locals-field
+ //> Functions interpreter-constructor
+ 
++  private InputStreamReader getcStream = new InputStreamReader(System.in, StandardCharsets.UTF_8);
++
+   Interpreter() {
+     globals.define("clock", new LoxCallable() {
+       @Override
+@@ -47,6 +53,72 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+       @Override
+       public String toString() { return "<native fn>"; }
+     });
++
++    globals.define("getc", new LoxCallable() {
++      @Override
++      public int arity() { return 0; }
++
++      @Override
++      public Object call(Interpreter interpreter,
++                         List<Object> arguments) {
++        try {
++          int c = getcStream.read();
++          if (c < 0) {
++            return (double)-1;
++          }
++          return (double)c;
++        } catch (IOException error) {
++          return (double)-1;
++        }
++      }
++
++      @Override
++      public String toString() { return "<native fn>"; }
++    });
++
++    globals.define("chr", new LoxCallable() {
++      @Override
++      public int arity() { return 1; }
++
++      @Override
++      public Object call(Interpreter interpreter,
++                         List<Object> arguments) {
++        return Character.toString((char)(double)arguments.get(0));
++      }
++
++      @Override
++      public String toString() { return "<native fn>"; }
++    });
++
++    globals.define("exit", new LoxCallable() {
++      @Override
++      public int arity() { return 1; }
++
++      @Override
++      public Object call(Interpreter interpreter,
++                         List<Object> arguments) {
++        System.exit((int)(double)arguments.get(0));
++        return null;
++      }
++
++      @Override
++      public String toString() { return "<native fn>"; }
++    });
++
++    globals.define("print_error", new LoxCallable() {
++      @Override
++      public int arity() { return 1; }
++
++      @Override
++      public Object call(Interpreter interpreter,
++                         List<Object> arguments) {
++        System.err.println((String)arguments.get(0));
++        return null;
++      }
++
++      @Override
++      public String toString() { return "<native fn>"; }
++    });
+   }
+ //< Functions interpreter-constructor
+ /* Evaluating Expressions interpret < Statements and State interpret
