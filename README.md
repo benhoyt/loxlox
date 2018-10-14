@@ -47,7 +47,7 @@ Hello world!
 To run the Lox test suite against LoxLox, use this command:
 
 ```
-python test.py
+$ python test.py
 ```
 
 Note that several tests will fail. That's expected -- the code works, and the failures are only from differences in the runtime error messages between JLox and LoxLox.
@@ -55,7 +55,7 @@ Note that several tests will fail. That's expected -- the code works, and the fa
 To run the tests and diff against the git-committed failure output:
 
 ```
-python test.py > failures
+$ python test.py > failures
 ```
 
 ## Contact me
