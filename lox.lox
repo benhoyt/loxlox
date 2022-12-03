@@ -1167,7 +1167,11 @@ class Return {
   }
 
   str() {
-    return "return " + this.value.str() + ";" + chr(10);
+    if (this.value != nil) {
+      return "return " + this.value.str() + ";" + chr(10);
+    } else {
+      return "return;" + chr(10);
+    }
   }
 
   resolve(resolver) {
