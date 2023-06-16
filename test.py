@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# NOTE: this was originally copied from the github.com/munificent/craftinginterpreters
+# repo and modified slightly (but I think those tests are run using Dart now, not Python).
+
 from __future__ import print_function
 
 from collections import defaultdict
@@ -809,7 +812,7 @@ class Test:
   def run(self):
     # Invoke the interpreter and run the test.
     args = interpreter.args[:]
-    proc = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    proc = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, text=True)
 
     with open(self.path) as f:
       lox_input = f.read()
@@ -823,11 +826,8 @@ class Test:
       self.fail("Test error: Cannot expect both compile and runtime errors.")
       return
 
-    try:
-      out = out.decode("utf-8").replace('\r\n', '\n')
-      err = err.decode("utf-8").replace('\r\n', '\n')
-    except:
-      self.fail('Error decoding output.')
+    out = out.replace('\r\n', '\n')
+    err = err.replace('\r\n', '\n')
 
     error_lines = err.split('\n')
 
@@ -926,9 +926,6 @@ class Test:
 
     index = 0
     for line in out_lines:
-      if sys.version_info < (3, 0):
-        line = line.encode('utf-8')
-
       if index >= len(self.output):
         self.fail('Got output "{0}" when none was expected.', line)
       elif self.output[index][0] != line:
@@ -975,7 +972,7 @@ def walk(dir, callback):
   """
 
   dir = abspath(dir)
-  for file in listdir(dir):
+  for file in sorted(listdir(dir)):
     nfile = join(dir, file)
     if isdir(nfile):
       walk(nfile, callback)
@@ -1018,12 +1015,6 @@ def run_script(path):
   # the argument to use that.
   path = relpath(path).replace("\\", "/")
 
-  # Update the status line.
-  print_line('Passed: ' + green(passed) +
-             ' Failed: ' + red(failed) +
-             ' Skipped: ' + yellow(num_skipped) +
-             gray(' (' + path + ')'))
-
   # Read the test and parse out the expectations.
   test = Test(path)
 
@@ -1036,13 +1027,13 @@ def run_script(path):
   # Display the results.
   if len(test.failures) == 0:
     passed += 1
+    print_line(green('PASS') + ': ' + path)
   else:
     failed += 1
     print_line(red('FAIL') + ': ' + path)
     print('')
     for failure in test.failures:
       print('      ' + pink(failure))
-    print('')
 
 
 def run_suite(name):

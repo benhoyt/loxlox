@@ -1,378 +1,310 @@
 
-Passed: 0 Failed: 0 Skipped: 0 (test/closure/reuse_closure_slot.lox)
-Passed: 1 Failed: 0 Skipped: 0 (test/closure/assign_to_shadowed_later.lox)
-Passed: 2 Failed: 0 Skipped: 0 (test/closure/close_over_later_variable.lox)
-Passed: 3 Failed: 0 Skipped: 0 (test/closure/closed_closure_in_function.lox)
-Passed: 4 Failed: 0 Skipped: 0 (test/closure/unused_later_closure.lox)
-Passed: 5 Failed: 0 Skipped: 0 (test/closure/shadow_closure_with_local.lox)
-Passed: 6 Failed: 0 Skipped: 0 (test/closure/unused_closure.lox)
-Passed: 7 Failed: 0 Skipped: 0 (test/closure/close_over_function_parameter.lox)
-Passed: 8 Failed: 0 Skipped: 0 (test/closure/close_over_method_parameter.lox)
-Passed: 9 Failed: 0 Skipped: 0 (test/closure/open_closure_in_function.lox)
-Passed: 10 Failed: 0 Skipped: 0 (test/closure/reference_closure_multiple_times.lox)
-Passed: 11 Failed: 0 Skipped: 0 (test/closure/nested_closure.lox)
-Passed: 12 Failed: 0 Skipped: 0 (test/closure/assign_to_closure.lox)
-Passed: 13 Failed: 0 Skipped: 0 (test/comments/line_at_eof.lox)
-Passed: 14 Failed: 0 Skipped: 0 (test/comments/only_line_comment.lox)
-Passed: 15 Failed: 0 Skipped: 0 (test/comments/unicode.lox)
-Passed: 16 Failed: 0 Skipped: 0 (test/comments/only_line_comment_and_line.lox)
-Passed: 17 Failed: 0 Skipped: 0 (test/empty_file.lox)
-Passed: 18 Failed: 0 Skipped: 0 (test/limit/too_many_constants.lox)
-Passed: 18 Failed: 0 Skipped: 1 (test/limit/no_reuse_constants.lox)
-Passed: 18 Failed: 0 Skipped: 2 (test/limit/too_many_upvalues.lox)
-Passed: 18 Failed: 0 Skipped: 3 (test/limit/stack_overflow.lox)
-Passed: 18 Failed: 0 Skipped: 4 (test/limit/too_many_locals.lox)
-Passed: 18 Failed: 0 Skipped: 5 (test/limit/loop_too_large.lox)
-Passed: 18 Failed: 0 Skipped: 6 (test/variable/in_nested_block.lox)
-Passed: 19 Failed: 0 Skipped: 6 (test/variable/scope_reuse_in_different_blocks.lox)
-Passed: 20 Failed: 0 Skipped: 6 (test/variable/local_from_method.lox)
-Passed: 21 Failed: 0 Skipped: 6 (test/variable/use_global_in_initializer.lox)
-Passed: 22 Failed: 0 Skipped: 6 (test/variable/use_this_as_var.lox)
-Passed: 23 Failed: 0 Skipped: 6 (test/variable/redeclare_global.lox)
-Passed: 24 Failed: 0 Skipped: 6 (test/variable/use_nil_as_var.lox)
-Passed: 25 Failed: 0 Skipped: 6 (test/variable/undefined_global.lox)
-Passed: 26 Failed: 0 Skipped: 6 (test/variable/shadow_and_local.lox)
-Passed: 27 Failed: 0 Skipped: 6 (test/variable/early_bound.lox)
-Passed: 28 Failed: 0 Skipped: 6 (test/variable/duplicate_parameter.lox)
-Passed: 29 Failed: 0 Skipped: 6 (test/variable/uninitialized.lox)
-Passed: 30 Failed: 0 Skipped: 6 (test/variable/use_false_as_var.lox)
-Passed: 31 Failed: 0 Skipped: 6 (test/variable/shadow_global.lox)
-Passed: 32 Failed: 0 Skipped: 6 (test/variable/duplicate_local.lox)
-Passed: 33 Failed: 0 Skipped: 6 (test/variable/in_middle_of_block.lox)
-Passed: 34 Failed: 0 Skipped: 6 (test/variable/shadow_local.lox)
-Passed: 35 Failed: 0 Skipped: 6 (test/variable/unreached_undefined.lox)
-Passed: 36 Failed: 0 Skipped: 6 (test/variable/collide_with_parameter.lox)
-Passed: 37 Failed: 0 Skipped: 6 (test/variable/use_local_in_initializer.lox)
-Passed: 38 Failed: 0 Skipped: 6 (test/variable/redefine_global.lox)
-Passed: 39 Failed: 0 Skipped: 6 (test/variable/undefined_local.lox)
-Passed: 40 Failed: 0 Skipped: 6 (test/nil/literal.lox)
-Passed: 41 Failed: 0 Skipped: 6 (test/unexpected_character.lox)
-Passed: 42 Failed: 0 Skipped: 6 (test/if/var_in_then.lox)
-Passed: 43 Failed: 0 Skipped: 6 (test/if/dangling_else.lox)
-Passed: 44 Failed: 0 Skipped: 6 (test/if/truth.lox)
-Passed: 45 Failed: 0 Skipped: 6 (test/if/fun_in_else.lox)
-Passed: 46 Failed: 0 Skipped: 6 (test/if/class_in_else.lox)
-Passed: 47 Failed: 0 Skipped: 6 (test/if/else.lox)
-Passed: 48 Failed: 0 Skipped: 6 (test/if/fun_in_then.lox)
-Passed: 49 Failed: 0 Skipped: 6 (test/if/class_in_then.lox)
-Passed: 50 Failed: 0 Skipped: 6 (test/if/var_in_else.lox)
-Passed: 51 Failed: 0 Skipped: 6 (test/if/if.lox)
-Passed: 52 Failed: 0 Skipped: 6 (test/assignment/grouping.lox)
-Passed: 53 Failed: 0 Skipped: 6 (test/assignment/syntax.lox)
-Passed: 54 Failed: 0 Skipped: 6 (test/assignment/global.lox)
-Passed: 55 Failed: 0 Skipped: 6 (test/assignment/prefix_operator.lox)
-Passed: 56 Failed: 0 Skipped: 6 (test/assignment/associativity.lox)
-Passed: 57 Failed: 0 Skipped: 6 (test/assignment/to_this.lox)
-Passed: 58 Failed: 0 Skipped: 6 (test/assignment/infix_operator.lox)
-Passed: 59 Failed: 0 Skipped: 6 (test/assignment/local.lox)
-Passed: 60 Failed: 0 Skipped: 6 (test/assignment/undefined.lox)
-Passed: 61 Failed: 0 Skipped: 6 (test/return/after_if.lox)
-Passed: 62 Failed: 0 Skipped: 6 (test/return/after_else.lox)
-Passed: 63 Failed: 0 Skipped: 6 (test/return/at_top_level.lox)
-Passed: 64 Failed: 0 Skipped: 6 (test/return/return_nil_if_no_value.lox)
-Passed: 65 Failed: 0 Skipped: 6 (test/return/in_method.lox)
-Passed: 66 Failed: 0 Skipped: 6 (test/return/in_function.lox)
-Passed: 67 Failed: 0 Skipped: 6 (test/return/after_while.lox)
-Passed: 68 Failed: 0 Skipped: 6 (test/function/local_mutual_recursion.lox)
-Passed: 69 Failed: 0 Skipped: 6 (test/function/empty_body.lox)
-Passed: 70 Failed: 0 Skipped: 6 (test/function/too_many_arguments.lox)
-Passed: 71 Failed: 0 Skipped: 6 (test/function/missing_comma_in_parameters.lox)
-Passed: 72 Failed: 0 Skipped: 6 (test/function/body_must_be_block.lox)
-Passed: 73 Failed: 0 Skipped: 6 (test/function/missing_arguments.lox)
-Passed: 74 Failed: 0 Skipped: 6 (test/function/parameters.lox)
-Passed: 75 Failed: 0 Skipped: 6 (test/function/local_recursion.lox)
-Passed: 76 Failed: 0 Skipped: 6 (test/function/recursion.lox)
-Passed: 77 Failed: 0 Skipped: 6 (test/function/print.lox)
-FAIL: test/function/print.lox
-      Expected output "<fn foo>" on line 2 and got "LoxFunction instance".
-      Expected output "<native fn>" on line 4 and got "Builtin0 instance".
-
-
-Passed: 77 Failed: 1 Skipped: 6 (test/function/too_many_parameters.lox)
-Passed: 78 Failed: 1 Skipped: 6 (test/function/mutual_recursion.lox)
-Passed: 79 Failed: 1 Skipped: 6 (test/function/extra_arguments.lox)
-Passed: 80 Failed: 1 Skipped: 6 (test/scanning/numbers.lox)
-Passed: 80 Failed: 1 Skipped: 7 (test/scanning/keywords.lox)
-Passed: 80 Failed: 1 Skipped: 8 (test/scanning/punctuators.lox)
-Passed: 80 Failed: 1 Skipped: 9 (test/scanning/whitespace.lox)
-Passed: 80 Failed: 1 Skipped: 10 (test/scanning/identifiers.lox)
-Passed: 80 Failed: 1 Skipped: 11 (test/scanning/strings.lox)
-Passed: 80 Failed: 1 Skipped: 12 (test/field/set_on_nil.lox)
-FAIL: test/field/set_on_nil.lox
-      Expected runtime error "Only instances have fields." and got:
-      Only instances have properties.
-
-
-Passed: 80 Failed: 2 Skipped: 12 (test/field/get_on_string.lox)
-Passed: 81 Failed: 2 Skipped: 12 (test/field/many.lox)
-Passed: 82 Failed: 2 Skipped: 12 (test/field/set_on_function.lox)
-FAIL: test/field/set_on_function.lox
-      Expected runtime error "Only instances have fields." and got:
-      Undefined property 'set'.
-
-
-Passed: 82 Failed: 3 Skipped: 12 (test/field/set_on_bool.lox)
-FAIL: test/field/set_on_bool.lox
-      Expected runtime error "Only instances have fields." and got:
-      Only instances have properties.
-
-
-Passed: 82 Failed: 4 Skipped: 12 (test/field/method.lox)
-Passed: 83 Failed: 4 Skipped: 12 (test/field/call_nonfunction_field.lox)
-FAIL: test/field/call_nonfunction_field.lox
-      Expected runtime error "Can only call functions and classes." and got:
-      Only instances have properties.
-
-
-Passed: 83 Failed: 5 Skipped: 12 (test/field/get_on_nil.lox)
-Passed: 84 Failed: 5 Skipped: 12 (test/field/set_on_class.lox)
-FAIL: test/field/set_on_class.lox
-      Expected runtime error "Only instances have fields." and got:
-      Undefined property 'set'.
-
-
-Passed: 84 Failed: 6 Skipped: 12 (test/field/set_on_string.lox)
-FAIL: test/field/set_on_string.lox
-      Expected runtime error "Only instances have fields." and got:
-      Only instances have properties.
-
-
-Passed: 84 Failed: 7 Skipped: 12 (test/field/on_instance.lox)
-Passed: 85 Failed: 7 Skipped: 12 (test/field/get_on_function.lox)
-FAIL: test/field/get_on_function.lox
-      Expected runtime error "Only instances have properties." and got:
-      Undefined property 'get'.
-
-
-Passed: 85 Failed: 8 Skipped: 12 (test/field/call_function_field.lox)
-Passed: 86 Failed: 8 Skipped: 12 (test/field/set_evaluation_order.lox)
-Passed: 87 Failed: 8 Skipped: 12 (test/field/method_binds_this.lox)
-Passed: 88 Failed: 8 Skipped: 12 (test/field/set_on_num.lox)
-FAIL: test/field/set_on_num.lox
-      Expected runtime error "Only instances have fields." and got:
-      Only instances have properties.
-
-
-Passed: 88 Failed: 9 Skipped: 12 (test/field/get_on_class.lox)
-FAIL: test/field/get_on_class.lox
-      Expected runtime error "Only instances have properties." and got:
-      Undefined property 'get'.
-
-
-Passed: 88 Failed: 10 Skipped: 12 (test/field/get_and_set_method.lox)
-Passed: 89 Failed: 10 Skipped: 12 (test/field/get_on_bool.lox)
-Passed: 90 Failed: 10 Skipped: 12 (test/field/get_on_num.lox)
-Passed: 91 Failed: 10 Skipped: 12 (test/field/undefined.lox)
-Passed: 92 Failed: 10 Skipped: 12 (test/print/missing_argument.lox)
-Passed: 93 Failed: 10 Skipped: 12 (test/number/decimal_point_at_eof.lox)
-Passed: 94 Failed: 10 Skipped: 12 (test/number/literals.lox)
-Passed: 95 Failed: 10 Skipped: 12 (test/number/leading_dot.lox)
-Passed: 96 Failed: 10 Skipped: 12 (test/number/trailing_dot.lox)
-Passed: 97 Failed: 10 Skipped: 12 (test/call/nil.lox)
-FAIL: test/call/nil.lox
-      Expected runtime error "Can only call functions and classes." and got:
-      Only instances have properties.
-
-
-Passed: 97 Failed: 11 Skipped: 12 (test/call/bool.lox)
+PASS: test/assignment/associativity.lox
+PASS: test/assignment/global.lox
+PASS: test/assignment/grouping.lox
+PASS: test/assignment/infix_operator.lox
+PASS: test/assignment/local.lox
+PASS: test/assignment/prefix_operator.lox
+PASS: test/assignment/syntax.lox
+PASS: test/assignment/to_this.lox
+PASS: test/assignment/undefined.lox
+PASS: test/block/empty.lox
+PASS: test/block/scope.lox
+PASS: test/bool/equality.lox
+PASS: test/bool/not.lox
 FAIL: test/call/bool.lox
       Expected runtime error "Can only call functions and classes." and got:
       Only instances have properties.
 
+FAIL: test/call/nil.lox
+      Expected runtime error "Can only call functions and classes." and got:
+      Only instances have properties.
 
-Passed: 97 Failed: 12 Skipped: 12 (test/call/num.lox)
 FAIL: test/call/num.lox
       Expected runtime error "Can only call functions and classes." and got:
       Only instances have properties.
 
-
-Passed: 97 Failed: 13 Skipped: 12 (test/call/object.lox)
 FAIL: test/call/object.lox
       Expected runtime error "Can only call functions and classes." and got:
       Undefined property 'arity'.
 
-
-Passed: 97 Failed: 14 Skipped: 12 (test/call/string.lox)
 FAIL: test/call/string.lox
       Expected runtime error "Can only call functions and classes." and got:
       Only instances have properties.
 
+FAIL: test/class/empty.lox
+      Expected output "Foo" on line 3 and got "LoxClass instance".
 
-Passed: 97 Failed: 15 Skipped: 12 (test/logical_operator/and.lox)
-Passed: 98 Failed: 15 Skipped: 12 (test/logical_operator/or.lox)
-Passed: 99 Failed: 15 Skipped: 12 (test/logical_operator/and_truth.lox)
-Passed: 100 Failed: 15 Skipped: 12 (test/logical_operator/or_truth.lox)
-Passed: 101 Failed: 15 Skipped: 12 (test/inheritance/inherit_from_nil.lox)
-FAIL: test/inheritance/inherit_from_nil.lox
-      Expected runtime error "Superclass must be a class." and got:
+PASS: test/class/inherit_self.lox
+PASS: test/class/inherited_method.lox
+PASS: test/class/local_inherit_self.lox
+FAIL: test/class/local_reference_self.lox
+      Expected output "Foo" on line 7 and got "LoxClass instance".
+
+FAIL: test/class/reference_self.lox
+      Expected output "Foo" on line 8 and got "LoxClass instance".
+
+PASS: test/closure/assign_to_closure.lox
+PASS: test/closure/assign_to_shadowed_later.lox
+PASS: test/closure/close_over_function_parameter.lox
+PASS: test/closure/close_over_later_variable.lox
+PASS: test/closure/close_over_method_parameter.lox
+PASS: test/closure/closed_closure_in_function.lox
+PASS: test/closure/nested_closure.lox
+PASS: test/closure/open_closure_in_function.lox
+PASS: test/closure/reference_closure_multiple_times.lox
+PASS: test/closure/reuse_closure_slot.lox
+PASS: test/closure/shadow_closure_with_local.lox
+PASS: test/closure/unused_closure.lox
+PASS: test/closure/unused_later_closure.lox
+PASS: test/comments/line_at_eof.lox
+PASS: test/comments/only_line_comment.lox
+PASS: test/comments/only_line_comment_and_line.lox
+PASS: test/comments/unicode.lox
+PASS: test/constructor/arguments.lox
+FAIL: test/constructor/call_init_early_return.lox
+      Expected output "Foo instance" on line 11 and got "LoxInstance instance".
+
+FAIL: test/constructor/call_init_explicitly.lox
+      Expected output "Foo instance" on line 12 and got "LoxInstance instance".
+
+FAIL: test/constructor/default.lox
+      Expected output "Foo instance" on line 4 and got "LoxInstance instance".
+
+PASS: test/constructor/default_arguments.lox
+FAIL: test/constructor/early_return.lox
+      Expected output "Foo instance" on line 10 and got "LoxInstance instance".
+
+PASS: test/constructor/extra_arguments.lox
+PASS: test/constructor/init_not_method.lox
+PASS: test/constructor/missing_arguments.lox
+FAIL: test/constructor/return_in_nested_function.lox
+      Expected output "Foo instance" on line 10 and got "LoxInstance instance".
+
+PASS: test/constructor/return_value.lox
+PASS: test/empty_file.lox
+PASS: test/field/call_function_field.lox
+FAIL: test/field/call_nonfunction_field.lox
+      Expected runtime error "Can only call functions and classes." and got:
       Only instances have properties.
 
+PASS: test/field/get_and_set_method.lox
+PASS: test/field/get_on_bool.lox
+FAIL: test/field/get_on_class.lox
+      Expected runtime error "Only instances have properties." and got:
+      Undefined property 'get'.
 
-Passed: 101 Failed: 16 Skipped: 12 (test/inheritance/inherit_from_function.lox)
+FAIL: test/field/get_on_function.lox
+      Expected runtime error "Only instances have properties." and got:
+      Undefined property 'get'.
+
+PASS: test/field/get_on_nil.lox
+PASS: test/field/get_on_num.lox
+PASS: test/field/get_on_string.lox
+PASS: test/field/many.lox
+PASS: test/field/method.lox
+PASS: test/field/method_binds_this.lox
+PASS: test/field/on_instance.lox
+PASS: test/field/set_evaluation_order.lox
+FAIL: test/field/set_on_bool.lox
+      Expected runtime error "Only instances have fields." and got:
+      Only instances have properties.
+
+FAIL: test/field/set_on_class.lox
+      Expected runtime error "Only instances have fields." and got:
+      Undefined property 'set'.
+
+FAIL: test/field/set_on_function.lox
+      Expected runtime error "Only instances have fields." and got:
+      Undefined property 'set'.
+
+FAIL: test/field/set_on_nil.lox
+      Expected runtime error "Only instances have fields." and got:
+      Only instances have properties.
+
+FAIL: test/field/set_on_num.lox
+      Expected runtime error "Only instances have fields." and got:
+      Only instances have properties.
+
+FAIL: test/field/set_on_string.lox
+      Expected runtime error "Only instances have fields." and got:
+      Only instances have properties.
+
+PASS: test/field/undefined.lox
+PASS: test/for/class_in_body.lox
+PASS: test/for/closure_in_body.lox
+PASS: test/for/fun_in_body.lox
+PASS: test/for/return_closure.lox
+PASS: test/for/return_inside.lox
+PASS: test/for/scope.lox
+PASS: test/for/statement_condition.lox
+PASS: test/for/statement_increment.lox
+PASS: test/for/statement_initializer.lox
+PASS: test/for/syntax.lox
+PASS: test/for/var_in_body.lox
+PASS: test/function/body_must_be_block.lox
+PASS: test/function/empty_body.lox
+PASS: test/function/extra_arguments.lox
+PASS: test/function/local_mutual_recursion.lox
+PASS: test/function/local_recursion.lox
+PASS: test/function/missing_arguments.lox
+PASS: test/function/missing_comma_in_parameters.lox
+PASS: test/function/mutual_recursion.lox
+PASS: test/function/parameters.lox
+FAIL: test/function/print.lox
+      Expected output "<fn foo>" on line 2 and got "LoxFunction instance".
+      Expected output "<native fn>" on line 4 and got "Builtin0 instance".
+
+PASS: test/function/recursion.lox
+PASS: test/function/too_many_arguments.lox
+PASS: test/function/too_many_parameters.lox
+PASS: test/if/class_in_else.lox
+PASS: test/if/class_in_then.lox
+PASS: test/if/dangling_else.lox
+PASS: test/if/else.lox
+PASS: test/if/fun_in_else.lox
+PASS: test/if/fun_in_then.lox
+PASS: test/if/if.lox
+PASS: test/if/truth.lox
+PASS: test/if/var_in_else.lox
+PASS: test/if/var_in_then.lox
 FAIL: test/inheritance/inherit_from_function.lox
       Expected runtime error "Superclass must be a class." and got:
       Undefined property 'findMethod'.
 
+FAIL: test/inheritance/inherit_from_nil.lox
+      Expected runtime error "Superclass must be a class." and got:
+      Only instances have properties.
 
-Passed: 101 Failed: 17 Skipped: 12 (test/inheritance/parenthesized_superclass.lox)
-Passed: 102 Failed: 17 Skipped: 12 (test/inheritance/set_fields_from_base_class.lox)
-Passed: 103 Failed: 17 Skipped: 12 (test/inheritance/inherit_from_number.lox)
 FAIL: test/inheritance/inherit_from_number.lox
       Expected runtime error "Superclass must be a class." and got:
       Only instances have properties.
 
-
-Passed: 103 Failed: 18 Skipped: 12 (test/inheritance/inherit_methods.lox)
-Passed: 104 Failed: 18 Skipped: 12 (test/super/no_superclass_method.lox)
-Passed: 105 Failed: 18 Skipped: 12 (test/super/call_same_method.lox)
-Passed: 106 Failed: 18 Skipped: 12 (test/super/no_superclass_call.lox)
-Passed: 107 Failed: 18 Skipped: 12 (test/super/no_superclass_bind.lox)
-Passed: 108 Failed: 18 Skipped: 12 (test/super/parenthesized.lox)
-Passed: 109 Failed: 18 Skipped: 12 (test/super/this_in_superclass_method.lox)
-Passed: 110 Failed: 18 Skipped: 12 (test/super/closure.lox)
-Passed: 111 Failed: 18 Skipped: 12 (test/super/super_in_top_level_function.lox)
-Passed: 112 Failed: 18 Skipped: 12 (test/super/call_other_method.lox)
-Passed: 113 Failed: 18 Skipped: 12 (test/super/missing_arguments.lox)
-Passed: 114 Failed: 18 Skipped: 12 (test/super/super_in_closure_in_inherited_method.lox)
-Passed: 115 Failed: 18 Skipped: 12 (test/super/super_in_inherited_method.lox)
-Passed: 116 Failed: 18 Skipped: 12 (test/super/super_without_dot.lox)
-Passed: 117 Failed: 18 Skipped: 12 (test/super/indirectly_inherited.lox)
-Passed: 118 Failed: 18 Skipped: 12 (test/super/super_at_top_level.lox)
-Passed: 119 Failed: 18 Skipped: 12 (test/super/super_without_name.lox)
-Passed: 120 Failed: 18 Skipped: 12 (test/super/extra_arguments.lox)
-Passed: 121 Failed: 18 Skipped: 12 (test/super/bound_method.lox)
-Passed: 122 Failed: 18 Skipped: 12 (test/super/constructor.lox)
-Passed: 123 Failed: 18 Skipped: 12 (test/super/reassign_superclass.lox)
-Passed: 124 Failed: 18 Skipped: 12 (test/bool/equality.lox)
-Passed: 125 Failed: 18 Skipped: 12 (test/bool/not.lox)
-Passed: 126 Failed: 18 Skipped: 12 (test/expressions/evaluate.lox)
-Passed: 126 Failed: 18 Skipped: 13 (test/expressions/parse.lox)
-Passed: 126 Failed: 18 Skipped: 14 (test/for/return_closure.lox)
-Passed: 127 Failed: 18 Skipped: 14 (test/for/scope.lox)
-Passed: 128 Failed: 18 Skipped: 14 (test/for/var_in_body.lox)
-Passed: 129 Failed: 18 Skipped: 14 (test/for/syntax.lox)
-Passed: 130 Failed: 18 Skipped: 14 (test/for/return_inside.lox)
-Passed: 131 Failed: 18 Skipped: 14 (test/for/statement_initializer.lox)
-Passed: 132 Failed: 18 Skipped: 14 (test/for/statement_increment.lox)
-Passed: 133 Failed: 18 Skipped: 14 (test/for/statement_condition.lox)
-Passed: 134 Failed: 18 Skipped: 14 (test/for/closure_in_body.lox)
-Passed: 135 Failed: 18 Skipped: 14 (test/for/class_in_body.lox)
-Passed: 136 Failed: 18 Skipped: 14 (test/for/fun_in_body.lox)
-Passed: 137 Failed: 18 Skipped: 14 (test/class/empty.lox)
-FAIL: test/class/empty.lox
-      Expected output "Foo" on line 3 and got "LoxClass instance".
-
-
-Passed: 137 Failed: 19 Skipped: 14 (test/class/local_inherit_self.lox)
-Passed: 138 Failed: 19 Skipped: 14 (test/class/inherited_method.lox)
-Passed: 139 Failed: 19 Skipped: 14 (test/class/reference_self.lox)
-FAIL: test/class/reference_self.lox
-      Expected output "Foo" on line 8 and got "LoxClass instance".
-
-
-Passed: 139 Failed: 20 Skipped: 14 (test/class/inherit_self.lox)
-Passed: 140 Failed: 20 Skipped: 14 (test/class/local_reference_self.lox)
-FAIL: test/class/local_reference_self.lox
-      Expected output "Foo" on line 7 and got "LoxClass instance".
-
-
-Passed: 140 Failed: 21 Skipped: 14 (test/this/this_in_method.lox)
-Passed: 141 Failed: 21 Skipped: 14 (test/this/this_at_top_level.lox)
-Passed: 142 Failed: 21 Skipped: 14 (test/this/closure.lox)
-Passed: 143 Failed: 21 Skipped: 14 (test/this/this_in_top_level_function.lox)
-Passed: 144 Failed: 21 Skipped: 14 (test/this/nested_closure.lox)
-Passed: 145 Failed: 21 Skipped: 14 (test/this/nested_class.lox)
+PASS: test/inheritance/inherit_methods.lox
+PASS: test/inheritance/parenthesized_superclass.lox
+PASS: test/inheritance/set_fields_from_base_class.lox
+PASS: test/logical_operator/and.lox
+PASS: test/logical_operator/and_truth.lox
+PASS: test/logical_operator/or.lox
+PASS: test/logical_operator/or_truth.lox
+PASS: test/method/arity.lox
+PASS: test/method/empty_block.lox
+PASS: test/method/extra_arguments.lox
+PASS: test/method/missing_arguments.lox
+PASS: test/method/not_found.lox
+PASS: test/method/refer_to_name.lox
+PASS: test/method/too_many_arguments.lox
+PASS: test/method/too_many_parameters.lox
+PASS: test/nil/literal.lox
+PASS: test/number/decimal_point_at_eof.lox
+PASS: test/number/leading_dot.lox
+PASS: test/number/literals.lox
+PASS: test/number/trailing_dot.lox
+PASS: test/operator/add.lox
+PASS: test/operator/add_bool_nil.lox
+PASS: test/operator/add_bool_num.lox
+PASS: test/operator/add_bool_string.lox
+PASS: test/operator/add_nil_nil.lox
+PASS: test/operator/add_num_nil.lox
+PASS: test/operator/add_string_nil.lox
+PASS: test/operator/comparison.lox
+PASS: test/operator/divide.lox
+PASS: test/operator/divide_nonnum_num.lox
+PASS: test/operator/divide_num_nonnum.lox
+PASS: test/operator/equals.lox
+PASS: test/operator/equals_class.lox
+PASS: test/operator/equals_method.lox
+PASS: test/operator/greater_nonnum_num.lox
+PASS: test/operator/greater_num_nonnum.lox
+PASS: test/operator/greater_or_equal_nonnum_num.lox
+PASS: test/operator/greater_or_equal_num_nonnum.lox
+PASS: test/operator/less_nonnum_num.lox
+PASS: test/operator/less_num_nonnum.lox
+PASS: test/operator/less_or_equal_nonnum_num.lox
+PASS: test/operator/less_or_equal_num_nonnum.lox
+PASS: test/operator/multiply.lox
+PASS: test/operator/multiply_nonnum_num.lox
+PASS: test/operator/multiply_num_nonnum.lox
+PASS: test/operator/negate.lox
+PASS: test/operator/negate_nonnum.lox
+PASS: test/operator/not.lox
+PASS: test/operator/not_class.lox
+PASS: test/operator/not_equals.lox
+PASS: test/operator/subtract.lox
+PASS: test/operator/subtract_nonnum_num.lox
+PASS: test/operator/subtract_num_nonnum.lox
+PASS: test/precedence.lox
+PASS: test/print/missing_argument.lox
+PASS: test/regression/40.lox
+PASS: test/return/after_else.lox
+PASS: test/return/after_if.lox
+PASS: test/return/after_while.lox
+PASS: test/return/at_top_level.lox
+PASS: test/return/in_function.lox
+PASS: test/return/in_method.lox
+PASS: test/return/return_nil_if_no_value.lox
+PASS: test/string/error_after_multiline.lox
+PASS: test/string/literals.lox
+PASS: test/string/multiline.lox
+PASS: test/string/unterminated.lox
+PASS: test/super/bound_method.lox
+PASS: test/super/call_other_method.lox
+PASS: test/super/call_same_method.lox
+PASS: test/super/closure.lox
+PASS: test/super/constructor.lox
+PASS: test/super/extra_arguments.lox
+PASS: test/super/indirectly_inherited.lox
+PASS: test/super/missing_arguments.lox
+PASS: test/super/no_superclass_bind.lox
+PASS: test/super/no_superclass_call.lox
+PASS: test/super/no_superclass_method.lox
+PASS: test/super/parenthesized.lox
+PASS: test/super/reassign_superclass.lox
+PASS: test/super/super_at_top_level.lox
+PASS: test/super/super_in_closure_in_inherited_method.lox
+PASS: test/super/super_in_inherited_method.lox
+PASS: test/super/super_in_top_level_function.lox
+PASS: test/super/super_without_dot.lox
+PASS: test/super/super_without_name.lox
+PASS: test/super/this_in_superclass_method.lox
+PASS: test/this/closure.lox
 FAIL: test/this/nested_class.lox
       Expected output "Outer instance" on line 3 and got "LoxInstance instance".
       Expected output "Outer instance" on line 6 and got "LoxInstance instance".
       Expected output "Inner instance" on line 10 and got "LoxInstance instance".
 
-
-Passed: 145 Failed: 22 Skipped: 14 (test/string/error_after_multiline.lox)
-Passed: 146 Failed: 22 Skipped: 14 (test/string/literals.lox)
-Passed: 147 Failed: 22 Skipped: 14 (test/string/multiline.lox)
-Passed: 148 Failed: 22 Skipped: 14 (test/string/unterminated.lox)
-Passed: 149 Failed: 22 Skipped: 14 (test/precedence.lox)
-Passed: 150 Failed: 22 Skipped: 14 (test/regression/40.lox)
-Passed: 151 Failed: 22 Skipped: 14 (test/while/return_closure.lox)
-Passed: 152 Failed: 22 Skipped: 14 (test/while/var_in_body.lox)
-Passed: 153 Failed: 22 Skipped: 14 (test/while/syntax.lox)
-Passed: 154 Failed: 22 Skipped: 14 (test/while/return_inside.lox)
-Passed: 155 Failed: 22 Skipped: 14 (test/while/closure_in_body.lox)
-Passed: 156 Failed: 22 Skipped: 14 (test/while/class_in_body.lox)
-Passed: 157 Failed: 22 Skipped: 14 (test/while/fun_in_body.lox)
-Passed: 158 Failed: 22 Skipped: 14 (test/method/empty_block.lox)
-Passed: 159 Failed: 22 Skipped: 14 (test/method/arity.lox)
-Passed: 160 Failed: 22 Skipped: 14 (test/method/refer_to_name.lox)
-Passed: 161 Failed: 22 Skipped: 14 (test/method/too_many_arguments.lox)
-Passed: 162 Failed: 22 Skipped: 14 (test/method/missing_arguments.lox)
-Passed: 163 Failed: 22 Skipped: 14 (test/method/not_found.lox)
-Passed: 164 Failed: 22 Skipped: 14 (test/method/too_many_parameters.lox)
-Passed: 165 Failed: 22 Skipped: 14 (test/method/extra_arguments.lox)
-Passed: 166 Failed: 22 Skipped: 14 (test/operator/add_num_nil.lox)
-Passed: 167 Failed: 22 Skipped: 14 (test/operator/equals_method.lox)
-Passed: 168 Failed: 22 Skipped: 14 (test/operator/equals_class.lox)
-Passed: 169 Failed: 22 Skipped: 14 (test/operator/subtract_num_nonnum.lox)
-Passed: 170 Failed: 22 Skipped: 14 (test/operator/multiply.lox)
-Passed: 171 Failed: 22 Skipped: 14 (test/operator/negate.lox)
-Passed: 172 Failed: 22 Skipped: 14 (test/operator/divide_nonnum_num.lox)
-Passed: 173 Failed: 22 Skipped: 14 (test/operator/comparison.lox)
-Passed: 174 Failed: 22 Skipped: 14 (test/operator/greater_num_nonnum.lox)
-Passed: 175 Failed: 22 Skipped: 14 (test/operator/less_or_equal_nonnum_num.lox)
-Passed: 176 Failed: 22 Skipped: 14 (test/operator/multiply_nonnum_num.lox)
-Passed: 177 Failed: 22 Skipped: 14 (test/operator/not_equals.lox)
-Passed: 178 Failed: 22 Skipped: 14 (test/operator/add_bool_num.lox)
-Passed: 179 Failed: 22 Skipped: 14 (test/operator/negate_nonnum.lox)
-Passed: 180 Failed: 22 Skipped: 14 (test/operator/add.lox)
-Passed: 181 Failed: 22 Skipped: 14 (test/operator/greater_or_equal_nonnum_num.lox)
-Passed: 182 Failed: 22 Skipped: 14 (test/operator/equals.lox)
-Passed: 183 Failed: 22 Skipped: 14 (test/operator/less_nonnum_num.lox)
-Passed: 184 Failed: 22 Skipped: 14 (test/operator/add_bool_string.lox)
-Passed: 185 Failed: 22 Skipped: 14 (test/operator/divide.lox)
-Passed: 186 Failed: 22 Skipped: 14 (test/operator/add_string_nil.lox)
-Passed: 187 Failed: 22 Skipped: 14 (test/operator/add_bool_nil.lox)
-Passed: 188 Failed: 22 Skipped: 14 (test/operator/divide_num_nonnum.lox)
-Passed: 189 Failed: 22 Skipped: 14 (test/operator/multiply_num_nonnum.lox)
-Passed: 190 Failed: 22 Skipped: 14 (test/operator/less_or_equal_num_nonnum.lox)
-Passed: 191 Failed: 22 Skipped: 14 (test/operator/greater_nonnum_num.lox)
-Passed: 192 Failed: 22 Skipped: 14 (test/operator/not.lox)
-Passed: 193 Failed: 22 Skipped: 14 (test/operator/add_nil_nil.lox)
-Passed: 194 Failed: 22 Skipped: 14 (test/operator/subtract.lox)
-Passed: 195 Failed: 22 Skipped: 14 (test/operator/subtract_nonnum_num.lox)
-Passed: 196 Failed: 22 Skipped: 14 (test/operator/not_class.lox)
-Passed: 197 Failed: 22 Skipped: 14 (test/operator/greater_or_equal_num_nonnum.lox)
-Passed: 198 Failed: 22 Skipped: 14 (test/operator/less_num_nonnum.lox)
-Passed: 199 Failed: 22 Skipped: 14 (test/constructor/call_init_explicitly.lox)
-FAIL: test/constructor/call_init_explicitly.lox
-      Expected output "Foo instance" on line 12 and got "LoxInstance instance".
-
-
-Passed: 199 Failed: 23 Skipped: 14 (test/constructor/return_value.lox)
-Passed: 200 Failed: 23 Skipped: 14 (test/constructor/init_not_method.lox)
-Passed: 201 Failed: 23 Skipped: 14 (test/constructor/missing_arguments.lox)
-Passed: 202 Failed: 23 Skipped: 14 (test/constructor/default.lox)
-FAIL: test/constructor/default.lox
-      Expected output "Foo instance" on line 4 and got "LoxInstance instance".
-
-
-Passed: 202 Failed: 24 Skipped: 14 (test/constructor/arguments.lox)
-Passed: 203 Failed: 24 Skipped: 14 (test/constructor/default_arguments.lox)
-Passed: 204 Failed: 24 Skipped: 14 (test/constructor/call_init_early_return.lox)
-FAIL: test/constructor/call_init_early_return.lox
-      Expected output "Foo instance" on line 11 and got "LoxInstance instance".
-
-
-Passed: 204 Failed: 25 Skipped: 14 (test/constructor/extra_arguments.lox)
-Passed: 205 Failed: 25 Skipped: 14 (test/constructor/return_in_nested_function.lox)
-FAIL: test/constructor/return_in_nested_function.lox
-      Expected output "Foo instance" on line 10 and got "LoxInstance instance".
-
-
-Passed: 205 Failed: 26 Skipped: 14 (test/constructor/early_return.lox)
-FAIL: test/constructor/early_return.lox
-      Expected output "Foo instance" on line 10 and got "LoxInstance instance".
-
-
-Passed: 205 Failed: 27 Skipped: 14 (test/block/empty.lox)
-Passed: 206 Failed: 27 Skipped: 14 (test/block/scope.lox)
+PASS: test/this/nested_closure.lox
+PASS: test/this/this_at_top_level.lox
+PASS: test/this/this_in_method.lox
+PASS: test/this/this_in_top_level_function.lox
+PASS: test/unexpected_character.lox
+PASS: test/variable/collide_with_parameter.lox
+PASS: test/variable/duplicate_local.lox
+PASS: test/variable/duplicate_parameter.lox
+PASS: test/variable/early_bound.lox
+PASS: test/variable/in_middle_of_block.lox
+PASS: test/variable/in_nested_block.lox
+PASS: test/variable/local_from_method.lox
+PASS: test/variable/redeclare_global.lox
+PASS: test/variable/redefine_global.lox
+PASS: test/variable/scope_reuse_in_different_blocks.lox
+PASS: test/variable/shadow_and_local.lox
+PASS: test/variable/shadow_global.lox
+PASS: test/variable/shadow_local.lox
+PASS: test/variable/undefined_global.lox
+PASS: test/variable/undefined_local.lox
+PASS: test/variable/uninitialized.lox
+PASS: test/variable/unreached_undefined.lox
+PASS: test/variable/use_false_as_var.lox
+PASS: test/variable/use_global_in_initializer.lox
+PASS: test/variable/use_local_in_initializer.lox
+PASS: test/variable/use_nil_as_var.lox
+PASS: test/variable/use_this_as_var.lox
+PASS: test/while/class_in_body.lox
+PASS: test/while/closure_in_body.lox
+PASS: test/while/fun_in_body.lox
+PASS: test/while/return_closure.lox
+PASS: test/while/return_inside.lox
+PASS: test/while/syntax.lox
+PASS: test/while/var_in_body.lox
 207 tests passed. 27 tests failed.
