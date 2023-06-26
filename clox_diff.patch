@@ -1,0 +1,341 @@
+diff --git a/c/compiler.c b/c/compiler.c
+index 463bea79..a170ff52 100644
+--- a/c/compiler.c
++++ b/c/compiler.c
+@@ -262,19 +262,24 @@ static void emitReturn() {
+ }
+ //< Compiling Expressions emit-return
+ //> Compiling Expressions make-constant
+-static uint8_t makeConstant(Value value) {
++static int makeConstant(Value value) {
+   int constant = addConstant(currentChunk(), value);
+-  if (constant > UINT8_MAX) {
++  if (constant > 0x7fff) {
+     error("Too many constants in one chunk.");
+     return 0;
+   }
+ 
+-  return (uint8_t)constant;
++  return constant;
+ }
+ //< Compiling Expressions make-constant
++static void emitConstantIndex(int index) {
++  if (index < 0x80) emitByte(index);
++  else emitBytes(index >> 8 | 0x80, index & 0xff);
++}
+ //> Compiling Expressions emit-constant
+ static void emitConstant(Value value) {
+-  emitBytes(OP_CONSTANT, makeConstant(value));
++  emitByte(OP_CONSTANT);
++  emitConstantIndex(makeConstant(value));
+ }
+ //< Compiling Expressions emit-constant
+ //> Jumping Back and Forth patch-jump
+@@ -411,7 +416,7 @@ static void parsePrecedence(Precedence precedence);
+ 
+ //< Compiling Expressions forward-declarations
+ //> Global Variables identifier-constant
+-static uint8_t identifierConstant(Token* name) {
++static int identifierConstant(Token* name) {
+   return makeConstant(OBJ_VAL(copyString(name->start,
+                                          name->length)));
+ }
+@@ -531,7 +536,7 @@ static void declareVariable() {
+ }
+ //< Local Variables declare-variable
+ //> Global Variables parse-variable
+-static uint8_t parseVariable(const char* errorMessage) {
++static int parseVariable(const char* errorMessage) {
+   consume(TOKEN_IDENTIFIER, errorMessage);
+ //> Local Variables parse-local
+ 
+@@ -552,7 +557,7 @@ static void markInitialized() {
+ }
+ //< Local Variables mark-initialized
+ //> Global Variables define-variable
+-static void defineVariable(uint8_t global) {
++static void defineVariable(int global) {
+ //> Local Variables define-variable
+   if (current->scopeDepth > 0) {
+ //> define-local
+@@ -562,7 +567,8 @@ static void defineVariable(uint8_t global) {
+   }
+ 
+ //< Local Variables define-variable
+-  emitBytes(OP_DEFINE_GLOBAL, global);
++  emitByte(OP_DEFINE_GLOBAL);
++  emitConstantIndex(global);
+ }
+ //< Global Variables define-variable
+ //> Calls and Functions argument-list
+@@ -630,19 +636,22 @@ static void call(bool canAssign) {
+ //> Classes and Instances compile-dot
+ static void dot(bool canAssign) {
+   consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+-  uint8_t name = identifierConstant(&parser.previous);
++  int name = identifierConstant(&parser.previous);
+ 
+   if (canAssign && match(TOKEN_EQUAL)) {
+     expression();
+-    emitBytes(OP_SET_PROPERTY, name);
++    emitByte(OP_SET_PROPERTY);
++    emitConstantIndex(name);
+ //> Methods and Initializers parse-call
+   } else if (match(TOKEN_LEFT_PAREN)) {
+     uint8_t argCount = argumentList();
+-    emitBytes(OP_INVOKE, name);
++    emitByte(OP_INVOKE);
++    emitConstantIndex(name);
+     emitByte(argCount);
+ //< Methods and Initializers parse-call
+   } else {
+-    emitBytes(OP_GET_PROPERTY, name);
++    emitByte(OP_GET_PROPERTY);
++    emitConstantIndex(name);
+   }
+ }
+ //< Classes and Instances compile-dot
+@@ -754,14 +763,18 @@ static void namedVariable(Token name, bool canAssign) {
+     emitBytes(OP_SET_GLOBAL, arg);
+ */
+ //> Local Variables emit-set
+-    emitBytes(setOp, (uint8_t)arg);
++    emitByte(setOp);
++    if (setOp == OP_SET_GLOBAL) emitConstantIndex(arg);
++    else emitByte(arg);
+ //< Local Variables emit-set
+   } else {
+ /* Global Variables named-variable < Local Variables emit-get
+     emitBytes(OP_GET_GLOBAL, arg);
+ */
+ //> Local Variables emit-get
+-    emitBytes(getOp, (uint8_t)arg);
++    emitByte(getOp);
++    if (getOp == OP_GET_GLOBAL) emitConstantIndex(arg);
++    else emitByte(arg);
+ //< Local Variables emit-get
+   }
+ //< named-variable
+@@ -797,7 +810,7 @@ static void super_(bool canAssign) {
+ //< super-errors
+   consume(TOKEN_DOT, "Expect '.' after 'super'.");
+   consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+-  uint8_t name = identifierConstant(&parser.previous);
++  int name = identifierConstant(&parser.previous);
+ //> super-get
+   
+   namedVariable(syntheticToken("this"), false);
+@@ -810,11 +823,13 @@ static void super_(bool canAssign) {
+   if (match(TOKEN_LEFT_PAREN)) {
+     uint8_t argCount = argumentList();
+     namedVariable(syntheticToken("super"), false);
+-    emitBytes(OP_SUPER_INVOKE, name);
++    emitByte(OP_SUPER_INVOKE);
++    emitConstantIndex(name);
+     emitByte(argCount);
+   } else {
+     namedVariable(syntheticToken("super"), false);
+-    emitBytes(OP_GET_SUPER, name);
++    emitByte(OP_GET_SUPER);
++    emitConstantIndex(name);
+   }
+ //< super-invoke
+ }
+@@ -1056,7 +1071,7 @@ static void function(FunctionType type) {
+       if (current->function->arity > 255) {
+         errorAtCurrent("Can't have more than 255 parameters.");
+       }
+-      uint8_t constant = parseVariable("Expect parameter name.");
++      int constant = parseVariable("Expect parameter name.");
+       defineVariable(constant);
+     } while (match(TOKEN_COMMA));
+   }
+@@ -1070,7 +1085,8 @@ static void function(FunctionType type) {
+   emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+ */
+ //> Closures emit-closure
+-  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
++  emitByte(OP_CLOSURE);
++  emitConstantIndex(makeConstant(OBJ_VAL(function)));
+ //< Closures emit-closure
+ //> Closures capture-upvalues
+ 
+@@ -1084,7 +1100,7 @@ static void function(FunctionType type) {
+ //> Methods and Initializers method
+ static void method() {
+   consume(TOKEN_IDENTIFIER, "Expect method name.");
+-  uint8_t constant = identifierConstant(&parser.previous);
++  int constant = identifierConstant(&parser.previous);
+ //> method-body
+ 
+ //< method-body
+@@ -1104,7 +1120,8 @@ static void method() {
+ //> method-body
+   function(type);
+ //< method-body
+-  emitBytes(OP_METHOD, constant);
++  emitByte(OP_METHOD);
++  emitConstantIndex(constant);
+ }
+ //< Methods and Initializers method
+ //> Classes and Instances class-declaration
+@@ -1113,10 +1130,11 @@ static void classDeclaration() {
+ //> Methods and Initializers class-name
+   Token className = parser.previous;
+ //< Methods and Initializers class-name
+-  uint8_t nameConstant = identifierConstant(&parser.previous);
++  int nameConstant = identifierConstant(&parser.previous);
+   declareVariable();
+ 
+-  emitBytes(OP_CLASS, nameConstant);
++  emitByte(OP_CLASS);
++  emitConstantIndex(nameConstant);
+   defineVariable(nameConstant);
+ 
+ //> Methods and Initializers create-class-compiler
+@@ -1180,7 +1198,7 @@ static void classDeclaration() {
+ //< Classes and Instances class-declaration
+ //> Calls and Functions fun-declaration
+ static void funDeclaration() {
+-  uint8_t global = parseVariable("Expect function name.");
++  int global = parseVariable("Expect function name.");
+   markInitialized();
+   function(TYPE_FUNCTION);
+   defineVariable(global);
+@@ -1188,7 +1206,7 @@ static void funDeclaration() {
+ //< Calls and Functions fun-declaration
+ //> Global Variables var-declaration
+ static void varDeclaration() {
+-  uint8_t global = parseVariable("Expect variable name.");
++  int global = parseVariable("Expect variable name.");
+ 
+   if (match(TOKEN_EQUAL)) {
+     expression();
+diff --git a/c/debug.c b/c/debug.c
+index 488e22d1..26b1df2a 100644
+--- a/c/debug.c
++++ b/c/debug.c
+@@ -16,27 +16,34 @@ void disassembleChunk(Chunk* chunk, const char* name) {
+     offset = disassembleInstruction(chunk, offset);
+   }
+ }
++static int readConstantIndex(Chunk *chunk, int *offset) {
++  int constant = chunk->code[(*offset)++];
++  if (!(constant & 0x80)) return constant;
++  return (constant & 0x7f) << 8 | chunk->code[(*offset)++];
++}
+ //> constant-instruction
+ static int constantInstruction(const char* name, Chunk* chunk,
+                                int offset) {
+-  uint8_t constant = chunk->code[offset + 1];
++  int newOffset = offset + 1;
++  int constant = readConstantIndex(chunk, &newOffset);
+   printf("%-16s %4d '", name, constant);
+   printValue(chunk->constants.values[constant]);
+   printf("'\n");
+ //> return-after-operand
+-  return offset + 2;
++  return newOffset;
+ //< return-after-operand
+ }
+ //< constant-instruction
+ //> Methods and Initializers invoke-instruction
+ static int invokeInstruction(const char* name, Chunk* chunk,
+                                 int offset) {
+-  uint8_t constant = chunk->code[offset + 1];
+-  uint8_t argCount = chunk->code[offset + 2];
++  int argOffset = offset + 1;
++  int constant = readConstantIndex(chunk, &argOffset);
++  uint8_t argCount = chunk->code[argOffset];
+   printf("%-16s (%d args) %4d '", name, argCount, constant);
+   printValue(chunk->constants.values[constant]);
+   printf("'\n");
+-  return offset + 3;
++  return argOffset + 1;
+ }
+ //< Methods and Initializers invoke-instruction
+ //> simple-instruction
+@@ -183,7 +190,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
+ //> Closures disassemble-closure
+     case OP_CLOSURE: {
+       offset++;
+-      uint8_t constant = chunk->code[offset++];
++      int constant = readConstantIndex(chunk, &offset);
+       printf("%-16s %4d ", "OP_CLOSURE", constant);
+       printValue(chunk->constants.values[constant]);
+       printf("\n");
+diff --git a/c/vm.c b/c/vm.c
+index fde80702..139895e8 100644
+--- a/c/vm.c
++++ b/c/vm.c
+@@ -4,6 +4,7 @@
+ //< Types of Values include-stdarg
+ //> vm-include-stdio
+ #include <stdio.h>
++#include <stdlib.h>
+ //> Strings vm-include-string
+ #include <string.h>
+ //< Strings vm-include-string
+@@ -31,6 +32,27 @@ static Value clockNative(int argCount, Value* args) {
+   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+ }
+ //< Calls and Functions clock-native
++static Value getcNative(int argCount, Value* args) {
++  int res = getchar();
++  if (res == EOF) res = -1;
++  return NUMBER_VAL((double)res);
++}
++static Value chrNative(int argCount, Value* args) {
++  if (argCount != 1 || !IS_NUMBER(args[0])) return NIL_VAL;
++  char *s = ALLOCATE(char, 2);
++  s[0] = (char) AS_NUMBER(args[0]);
++  s[1] = '\0';
++  return OBJ_VAL(takeString(s, 1));
++}
++static Value exitNative(int argCount, Value* args) {
++  if (argCount != 1 || !IS_NUMBER(args[0])) return NIL_VAL;
++  exit((int) AS_NUMBER(args[0]));
++}
++static Value printErrorNative(int argCount, Value* args) {
++  if (argCount != 1 || !IS_STRING(args[0])) return NIL_VAL;
++  fprintf(stderr, "%s\n", AS_CSTRING(args[0]));
++  return NIL_VAL;
++}
+ //> reset-stack
+ static void resetStack() {
+   vm.stackTop = vm.stack;
+@@ -129,6 +151,10 @@ void initVM() {
+ //> Calls and Functions define-native-clock
+ 
+   defineNative("clock", clockNative);
++  defineNative("getc", getcNative);
++  defineNative("chr", chrNative);
++  defineNative("exit", exitNative);
++  defineNative("print_error", printErrorNative);
+ //< Calls and Functions define-native-clock
+ }
+ 
+@@ -418,7 +444,9 @@ static InterpretResult run() {
+ */
+ //> Closures read-constant
+ #define READ_CONSTANT() \
+-    (frame->closure->function->chunk.constants.values[READ_BYTE()])
++    (frame->closure->function->chunk.constants.values[ \
++      *frame->ip & 0x80 ? READ_SHORT() & 0x7fff : READ_BYTE() \
++    ])
+ //< Closures read-constant
+ 
+ //< Calls and Functions run
+diff --git a/c/vm.h b/c/vm.h
+index c1804516..edbbd977 100644
+--- a/c/vm.h
++++ b/c/vm.h
+@@ -21,7 +21,7 @@
+ #define STACK_MAX 256
+ */
+ //> Calls and Functions frame-max
+-#define FRAMES_MAX 64
++#define FRAMES_MAX 128
+ #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+ //< Calls and Functions frame-max
+ //> Calls and Functions call-frame
